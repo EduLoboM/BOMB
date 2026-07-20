@@ -121,3 +121,4 @@ public/
 Thumbs.db
 
 src/clearDb.ts
+src/migration.ts
