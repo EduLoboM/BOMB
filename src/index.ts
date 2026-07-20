@@ -1,18 +1,9 @@
 import "dotenv/config";
 import { Logger } from "./logger.js";
 import { Client, Events, GatewayIntentBits } from "discord.js";
-import { startScheduler } from "./scheduler/standupScheduler.js";
+import { startScheduler, stopScheduler } from "./scheduler/standupScheduler.js";
 import { handleInteraction } from "./handlers/interactionHandler.js";
-
-function getRequiredEnv(name: string): string {
-    const value = process.env[name];
-
-    if (!value) {
-        throw new Error(`The variable ${name} was not defined in the .env file.`);
-    }
-
-    return value;
-}
+import { getRequiredEnv } from "./env.js";
 
 const token = getRequiredEnv("DISCORD_TOKEN");
 
@@ -28,6 +19,17 @@ client.once(Events.ClientReady, (readyClient) => {
 client.on(Events.InteractionCreate, async (interaction) => {
     await handleInteraction(interaction);
 });
+
+// ─── Graceful Shutdown ────────────────────────────────
+function shutdown() {
+    Logger.info("Shutting down gracefully...");
+    stopScheduler();
+    client.destroy();
+    process.exit(0);
+}
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
 
 client.login(token).catch((error: unknown) => {
     Logger.error("Failed to connect the bot", error);

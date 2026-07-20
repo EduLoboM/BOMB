@@ -1,15 +1,6 @@
 import "dotenv/config";
 import { REST, Routes, SlashCommandBuilder, PermissionFlagsBits, ChannelType } from "discord.js";
-
-function getRequiredEnv(name: string): string {
-    const value = process.env[name];
-
-    if (!value) {
-        throw new Error(`The variable ${name} was not defined in the .env file.`);
-    }
-
-    return value;
-}
+import { getRequiredEnv } from "./env.js";
 
 const token = getRequiredEnv("DISCORD_TOKEN");
 const clientId = getRequiredEnv("CLIENT_ID");

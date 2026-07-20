@@ -11,7 +11,7 @@ export const Logger = {
         const time = new Date().toLocaleTimeString("en-US", { hour12: false });
         console.warn(`\x1b[90m[${time}]\x1b[0m \x1b[1;33m⚠\ufe0e NOTICE\x1b[0m \x1b[90m›\x1b[0m \x1b[3m${message}\x1b[0m`);
     },
-    error: (message: string, error?: any) => {
+    error: (message: string, error?: unknown) => {
         const time = new Date().toLocaleTimeString("en-US", { hour12: false });
         console.error(`\x1b[90m[${time}]\x1b[0m \x1b[1;31m✖ FAILED\x1b[0m \x1b[90m›\x1b[0m \x1b[3m${message}\x1b[0m`);
         
