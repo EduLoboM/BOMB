@@ -120,9 +120,33 @@ All commands use Discord's native **Slash Commands** (`/`).
 ```
 BOMB/
 ├── src/
-│   ├── index.ts             # Bot entry point & interaction handlers
-│   ├── deployCommands.ts    # Slash command registration
-│   └── logger.ts            # Styled console logger
+│   ├── commands/            # Discord slash commands definitions
+│   │   ├── commandInterface.ts
+│   │   ├── createProject.ts
+│   │   ├── daily.ts
+│   │   ├── index.ts
+│   │   ├── joinProject.ts
+│   │   ├── projectStatus.ts
+│   │   ├── setupChannel.ts
+│   │   ├── setupDaily.ts
+│   │   └── setupSprint.ts
+│   ├── handlers/            # Interaction and event handlers
+│   │   └── interactionHandler.ts
+│   ├── scheduler/           # Standup cron scheduler service
+│   │   └── standupScheduler.ts
+│   ├── services/            # Supabase database access layer
+│   │   ├── dailyService.ts
+│   │   ├── projectService.ts
+│   │   ├── sprintService.ts
+│   │   └── userService.ts
+│   ├── utils/               # Date utilities and report compilers
+│   │   ├── dateUtils.ts
+│   │   └── reportUtils.ts
+│   ├── deployCommands.ts    # Slash commands registry builder
+│   ├── index.ts             # Main entrypoint and bot initializer
+│   ├── logger.ts            # Custom console logger helper
+│   ├── schema.sql           # Database schema SQL commands
+│   └── supabase.ts          # Supabase client initializer
 ├── .env                     # Environment variables
 ├── package.json
 └── tsconfig.json
@@ -140,46 +164,24 @@ BOMB/
 ### Database Schema (Supabase)
 
 ```mermaid
-erDiagram
-    projects ||--o{ users : "has"
-    projects ||--o{ sprints : "has"
-    users ||--o{ dailies : "submits"
-    projects ||--o{ dailies : "tracks"
+flowchart TD
+    P["<b>projects</b><br/>---<br/>id (uuid) PK<br/>• name (varchar)<br/>• access_code (varchar)<br/>• guild_id (varchar)<br/>• channel_id (varchar)<br/>• daily_time (time)<br/>• weekdays (varchar)"]
+    
+    U["<b>users</b><br/>---<br/>id (uuid) PK<br/>• discord_id (varchar)<br/>• project_id (uuid) FK<br/>• display_name (varchar)"]
+    
+    S["<b>sprints</b><br/>---<br/>id (uuid) PK<br/>• project_id (uuid) FK<br/>• number (int)<br/>• start_date (date)<br/>• end_date (date)"]
+    
+    D["<b>dailies</b><br/>---<br/>id (uuid) PK<br/>• user_id (uuid) FK<br/>• project_id (uuid) FK<br/>• done (text)<br/>• todo (text)<br/>• blockers (text)<br/>• submitted_at (timestamp)"]
 
-    projects {
-        uuid id PK
-        varchar guild_id
-        varchar channel_id
-        varchar name
-        varchar access_code
-        time daily_time
-        varchar weekdays
-    }
+    P -->|has many| U
+    P -->|has many| S
+    P -->|tracks| D
+    U -->|submits| D
 
-    users {
-        uuid id PK
-        varchar discord_id
-        uuid project_id FK
-        varchar display_name
-    }
-
-    sprints {
-        uuid id PK
-        uuid project_id FK
-        int number
-        date start_date
-        date end_date
-    }
-
-    dailies {
-        uuid id PK
-        uuid user_id FK
-        uuid project_id FK
-        text done
-        text todo
-        text blockers
-        timestamp submitted_at
-    }
+    style P fill:#4f46e5,stroke:#4f46e5,color:#fff,rx:8px,ry:8px
+    style U fill:#0ea5e9,stroke:#0ea5e9,color:#fff,rx:8px,ry:8px
+    style S fill:#f59e0b,stroke:#f59e0b,color:#fff,rx:8px,ry:8px
+    style D fill:#22c55e,stroke:#22c55e,color:#fff,rx:8px,ry:8px
 ```
 
 ---
