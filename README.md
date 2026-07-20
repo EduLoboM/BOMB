@@ -107,11 +107,13 @@ All commands use Discord's native **Slash Commands** (`/`).
 |---|---|---|
 | `/create_project [name]` | 🔑 Leader | Create a new project in the current server |
 | `/join_project [code]` | 👤 Member | Join an existing project by invite code |
-| `/project_status` | 👤 Anyone | View project config, members & sprint status |
+| `/project_status` | 👤 Anyone | View project config, members & sprint status (falls back to N/A if not configured) |
 | `/setup_channel [#channel]` | 🔑 Leader | Set the channel for daily reports |
-| `/setup_daily [time] [days]` | 🔑 Leader | Schedule standup reminders (e.g. `10:00`, `mon,tue,wed`) |
-| `/setup_sprint [start] [days]` | 🔑 Leader | Define sprint start date & duration |
-| `/daily` | 👤 Anyone | Manually open the daily modal (if you missed the alert) |
+| `/setup_daily [time] [days] [period]` | 🔑 Leader | Schedule standup reminders and set the open period (e.g. `10:00`, `mon,tue,wed`, `1h30m`). Submissions outside this window will be blocked |
+| `/setup_sprint [start] [days] [repeat]` | 🔑 Leader | Define sprint start date, duration, and toggle automatic sprint repetition when it ends |
+| `/sprint_repeat [enabled]` | 🔑 Leader | Enable or disable automatic sprint repetition at any time |
+| `/finish_project` | 🔑 Leader | Finish and permanently delete the project for this server (with confirmation prompt) |
+| `/daily` | 👤 Anyone | Manually open the daily modal (only works if the daily window is currently open) |
 
 ---
 
@@ -119,6 +121,9 @@ All commands use Discord's native **Slash Commands** (`/`).
 
 ```
 BOMB/
+├── tests/                   # Automated unit tests (Vitest)
+│   ├── dateUtils.test.ts
+│   └── reportUtils.test.ts
 ├── src/
 │   ├── commands/            # Discord slash commands definitions
 │   │   ├── commandInterface.ts
@@ -129,7 +134,9 @@ BOMB/
 │   │   ├── projectStatus.ts
 │   │   ├── setupChannel.ts
 │   │   ├── setupDaily.ts
-│   │   └── setupSprint.ts
+│   │   ├── setupSprint.ts
+│   │   ├── sprintRepeat.ts
+│   │   └── finishProject.ts
 │   ├── handlers/            # Interaction and event handlers
 │   │   └── interactionHandler.ts
 │   ├── scheduler/           # Standup cron scheduler service
@@ -165,7 +172,7 @@ BOMB/
 
 ```mermaid
 flowchart TD
-    P["<b>projects</b><br/>---<br/>id (uuid) PK<br/>• name (varchar)<br/>• access_code (varchar)<br/>• guild_id (varchar)<br/>• channel_id (varchar)<br/>• daily_time (time)<br/>• weekdays (varchar)"]
+    P["<b>projects</b><br/>---<br/>id (uuid) PK<br/>• name (varchar)<br/>• access_code (varchar)<br/>• guild_id (varchar)<br/>• channel_id (varchar)<br/>• daily_time (time)<br/>• weekdays (varchar)<br/>• daily_period (int)<br/>• sprint_repeat (boolean)<br/>• sprint_duration (int)"]
     
     U["<b>users</b><br/>---<br/>id (uuid) PK<br/>• discord_id (varchar)<br/>• project_id (uuid) FK<br/>• display_name (varchar)"]
     
