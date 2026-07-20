@@ -47,16 +47,40 @@ export const projectService = {
         if (error) throw error;
     },
 
-    async updateProjectSchedule(projectId: string, dailyTime: string, weekdays: string) {
+    async updateProjectSchedule(projectId: string, dailyTime: string, weekdays: string, dailyPeriod: number, timezone: string) {
         const { error } = await supabase
             .from("projects")
             .update({
                 daily_time: dailyTime,
                 weekdays: weekdays,
+                daily_period: dailyPeriod,
+                timezone: timezone,
             })
             .eq("id", projectId);
 
         if (error) throw error;
+    },
+
+    async updateProjectSprintSettings(projectId: string, sprintRepeat: boolean, sprintDuration: number) {
+        const { error } = await supabase
+            .from("projects")
+            .update({
+                sprint_repeat: sprintRepeat,
+                sprint_duration: sprintDuration,
+            })
+            .eq("id", projectId);
+
+        if (error) throw error;
+    },
+
+    async getProjectsWithSprintRepeat() {
+        const { data, error } = await supabase
+            .from("projects")
+            .select("*")
+            .eq("sprint_repeat", true);
+
+        if (error) throw error;
+        return data || [];
     },
 
     async getAllScheduledProjects() {
@@ -68,5 +92,14 @@ export const projectService = {
 
         if (error) throw error;
         return data;
+    },
+
+    async deleteProject(projectId: string) {
+        const { error } = await supabase
+            .from("projects")
+            .delete()
+            .eq("id", projectId);
+
+        if (error) throw error;
     }
 };
