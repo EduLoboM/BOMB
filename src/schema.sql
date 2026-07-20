@@ -7,7 +7,11 @@ CREATE TABLE IF NOT EXISTS projects (
     name VARCHAR(255) NOT NULL,
     access_code VARCHAR(255) UNIQUE NOT NULL,
     daily_time TIME,
-    weekdays VARCHAR(255)
+    weekdays VARCHAR(255),
+    daily_period INT,
+    sprint_repeat BOOLEAN DEFAULT FALSE,
+    sprint_duration INT,
+    timezone VARCHAR(255) DEFAULT 'UTC'
 );
 
 CREATE TABLE IF NOT EXISTS users (
@@ -36,8 +40,9 @@ CREATE TABLE IF NOT EXISTS dailies (
     submitted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Disable Row Level Security (RLS) to allow bot connections using public/anon API key
-ALTER TABLE projects DISABLE ROW LEVEL SECURITY;
-ALTER TABLE users DISABLE ROW LEVEL SECURITY;
-ALTER TABLE sprints DISABLE ROW LEVEL SECURITY;
-ALTER TABLE dailies DISABLE ROW LEVEL SECURITY;
+-- Enable Row Level Security (RLS) for security.
+-- The bot should be configured with the Supabase service_role key to bypass RLS safely on the server.
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sprints ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dailies ENABLE ROW LEVEL SECURITY;
