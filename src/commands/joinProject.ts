@@ -2,6 +2,10 @@ import { ChatInputCommandInteraction } from "discord.js";
 import { Command } from "./commandInterface.js";
 import { projectService } from "../services/projectService.js";
 import { userService } from "../services/userService.js";
+import {
+    COLORS, ICONS, HEADERS,
+    buildEmbed, errorMsg, infoMsg
+} from "../utils/theme.js";
 
 export const joinProject: Command = {
     name: "join_project",
@@ -14,7 +18,7 @@ export const joinProject: Command = {
         const project = await projectService.getProjectByAccessCode(accessCode);
         if (!project) {
             await interaction.editReply({
-                content: "❌ Project not found! Please check the invite code and try again.",
+                content: errorMsg("Project not found! Please check the invite code and try again."),
             });
             return;
         }
@@ -22,7 +26,7 @@ export const joinProject: Command = {
         const existingUser = await userService.getMember(interaction.user.id, project.id);
         if (existingUser) {
             await interaction.editReply({
-                content: `ℹ️ You are already a member of the project **${project.name}**!`,
+                content: infoMsg(`You are already a member of the project **${project.name}**!`),
             });
             return;
         }
@@ -33,8 +37,21 @@ export const joinProject: Command = {
 
         await userService.addMember(interaction.user.id, project.id, displayName);
 
-        await interaction.editReply({
-            content: `🎉 Welcome to the team! You have successfully joined the project **${project.name}**.`,
+        const embed = buildEmbed({
+            title: `${ICONS.success}  Welcome Aboard`,
+            description: [
+                HEADERS.welcome,
+                "",
+                `${ICONS.user} **${displayName}** has joined **${project.name}**`,
+                "",
+                `${ICONS.arrow} You can now submit daily standups with \`/daily\``,
+                `${ICONS.arrow} Check project status with \`/project_status\``,
+                "",
+                `${ICONS.sparkle} *Welcome to the team!*`,
+            ].join("\n"),
+            color: COLORS.success,
         });
+
+        await interaction.editReply({ embeds: [embed] });
     }
 };

@@ -89,7 +89,9 @@ describe("Slash Commands - setup_daily", () => {
         await setupDaily.execute(interaction, {} as any);
         expect(projectService.updateProjectSchedule).toHaveBeenCalledWith("p1", "10:00:00", "mon,tue", 30, "UTC");
         expect(interaction.editReply).toHaveBeenCalled();
-        expect(interaction.editReply.mock.calls[0][0].content).toContain("schedule for project");
+        const replyArg = interaction.editReply.mock.calls[0][0];
+        expect(replyArg.embeds).toBeDefined();
+        expect(replyArg.embeds[0].data.description).toContain("BOMB");
     });
 });
 
@@ -124,6 +126,8 @@ describe("Slash Commands - setup_sprint", () => {
         expect(sprintService.createSprint).toHaveBeenCalled();
         expect(projectService.updateProjectSprintSettings).toHaveBeenCalledWith("p1", true, 14);
         expect(interaction.editReply).toHaveBeenCalled();
-        expect(interaction.editReply.mock.calls[0][0].content).toContain("has been defined for project");
+        const replyArg = interaction.editReply.mock.calls[0][0];
+        expect(replyArg.embeds).toBeDefined();
+        expect(replyArg.embeds[0].data.description).toContain("BOMB");
     });
 });

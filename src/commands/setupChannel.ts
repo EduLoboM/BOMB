@@ -1,6 +1,10 @@
 import { ChatInputCommandInteraction, MessageFlags } from "discord.js";
 import { Command } from "./commandInterface.js";
 import { projectService } from "../services/projectService.js";
+import {
+    COLORS, ICONS,
+    buildEmbed, errorMsg
+} from "../utils/theme.js";
 
 export const setupChannel: Command = {
     name: "setup_channel",
@@ -8,7 +12,7 @@ export const setupChannel: Command = {
     async execute(interaction: ChatInputCommandInteraction) {
         if (!interaction.guildId) {
             await interaction.reply({
-                content: "❌ This command can only be run inside a Discord server.",
+                content: errorMsg("This command can only be run inside a Discord server."),
                 flags: MessageFlags.Ephemeral,
             });
             return;
@@ -21,15 +25,23 @@ export const setupChannel: Command = {
         const project = await projectService.getProjectByGuild(interaction.guildId);
         if (!project) {
             await interaction.editReply({
-                content: "❌ No project exists for this server. Please create one first using `/create_project`.",
+                content: errorMsg("No project exists for this server. Please create one first using `/create_project`."),
             });
             return;
         }
 
         await projectService.updateProjectChannel(project.id, channel.id);
 
-        await interaction.editReply({
-            content: `✅ Daily reports channel for project **${project.name}** has been set to <#${channel.id}>!`,
+        const embed = buildEmbed({
+            title: `${ICONS.success}  Channel Configured`,
+            description: [
+                `${ICONS.channel} Daily report channel for **${project.name}** has been set to <#${channel.id}>`,
+                "",
+                `${ICONS.arrow} Standup reports will now be posted there.`,
+            ].join("\n"),
+            color: COLORS.success,
         });
+
+        await interaction.editReply({ embeds: [embed] });
     }
 };

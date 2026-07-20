@@ -3,6 +3,11 @@ import { Command } from "./commandInterface.js";
 import { projectService } from "../services/projectService.js";
 import { sprintService } from "../services/sprintService.js";
 import { dateUtils } from "../utils/dateUtils.js";
+import {
+    COLORS, ICONS, HEADERS,
+    buildEmbed, errorMsg, kvPair, codeBox,
+    sprintTimeline, statusBadge
+} from "../utils/theme.js";
 
 export const setupSprint: Command = {
     name: "setup_sprint",
@@ -10,7 +15,7 @@ export const setupSprint: Command = {
     async execute(interaction: ChatInputCommandInteraction) {
         if (!interaction.guildId) {
             await interaction.reply({
-                content: "❌ This command can only be run inside a Discord server.",
+                content: errorMsg("This command can only be run inside a Discord server."),
                 flags: MessageFlags.Ephemeral,
             });
             return;
@@ -24,7 +29,7 @@ export const setupSprint: Command = {
 
         if (daysInput <= 0) {
             await interaction.editReply({
-                content: "❌ Sprint duration must be a positive number of days.",
+                content: errorMsg("Sprint duration must be a positive number of days."),
             });
             return;
         }
@@ -32,7 +37,7 @@ export const setupSprint: Command = {
         const project = await projectService.getProjectByGuild(interaction.guildId);
         if (!project) {
             await interaction.editReply({
-                content: "❌ No project exists for this server. Please create one first using `/create_project`.",
+                content: errorMsg("No project exists for this server. Please create one first using `/create_project`."),
             });
             return;
         }
@@ -46,15 +51,15 @@ export const setupSprint: Command = {
             const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
             if (!dateRegex.test(startInput)) {
                 await interaction.editReply({
-                    content: "❌ Invalid start date format! Use `YYYY-MM-DD` (e.g. `2026-07-20`) or `today`.",
+                    content: errorMsg("Invalid start date format! Use `YYYY-MM-DD` (e.g. `2026-07-20`) or `today`."),
                 });
                 return;
             }
-            const [y, m, d] = startInput.split("-").map(Number);
+            const [y, m, d] = startInput.split("-").map(Number) as [number, number, number];
             const testDate = new Date(Date.UTC(y, m - 1, d));
             if (isNaN(testDate.getTime())) {
                 await interaction.editReply({
-                    content: "❌ Invalid start date! Please make sure it is a valid calendar date.",
+                    content: errorMsg("Invalid start date! Please make sure it is a valid calendar date."),
                 });
                 return;
             }
@@ -77,12 +82,23 @@ export const setupSprint: Command = {
         // Update project defaults for repeat and duration
         await projectService.updateProjectSprintSettings(project.id, repeatInput, daysInput);
 
-        await interaction.editReply({
-            content: `✅ **Sprint #${nextSprintNumber}** has been defined for project **${project.name}**!\n` +
-                `📅 **Start Date:** \`${startDateStr}\`\n` +
-                `🏁 **End Date:** \`${endDateStr}\`\n` +
-                `⏱️ **Duration:** ${daysInput} day(s)\n` +
-                `🔁 **Auto-Repeat:** ${repeatInput ? "Enabled" : "Disabled"}`,
+        const repeatBadge = repeatInput ? statusBadge("Enabled", true) : statusBadge("Disabled", false);
+
+        const embed = buildEmbed({
+            title: `${ICONS.success}  Sprint Created`,
+            description: [
+                HEADERS.sprint,
+                "",
+                `${ICONS.sprint} **Sprint #${nextSprintNumber}** for **${project.name}**`,
+                "",
+                sprintTimeline(startDateStr, endDateStr, daysInput),
+                "",
+                `├─ ${kvPair("Duration", codeBox(`${daysInput} day(s)`))}`,
+                `└─ ${kvPair("Auto-Repeat", repeatBadge)}`,
+            ].join("\n"),
+            color: COLORS.sprint,
         });
+
+        await interaction.editReply({ embeds: [embed] });
     }
 };

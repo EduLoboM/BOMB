@@ -7,15 +7,49 @@ import {
     ModalBuilder,
     TextInputBuilder,
     TextInputStyle,
-    ModalActionRowComponentBuilder
+    ModalActionRowComponentBuilder,
+    ButtonInteraction,
+    ChatInputCommandInteraction,
+    TextChannel,
+    NewsChannel,
+    Message
 } from "discord.js";
 import { Logger } from "../logger.js";
 import { userService } from "../services/userService.js";
 import { dailyService } from "../services/dailyService.js";
 import { dateUtils } from "./dateUtils.js";
+import type { Project, DailyWithUser } from "../types.js";
+import {
+    COLORS, ICONS, DIVIDERS, HEADERS,
+    progressBar, treeItem, buildEmbed,
+    sectionTitle, kvPair
+} from "./theme.js";
+
+/**
+ * Formats a single submission entry for the daily report embed.
+ * Extracted to eliminate duplication between the short and chunked paths.
+ */
+function formatSubmissionEntry(
+    discordId: string,
+    daily: DailyWithUser,
+    branchChar: string,
+    continueChar: string,
+): string {
+    const blockerText = daily.blockers && daily.blockers.trim()
+        ? `${ICONS.blocker} ${daily.blockers}`
+        : ICONS.none;
+
+    return (
+        `${branchChar}─ ${ICONS.user} **<@${discordId}>** *(${daily.users.display_name})*\n` +
+        `${continueChar}  ${treeItem(`**Done:** ${daily.done}`)}` + "\n" +
+        `${continueChar}  ${treeItem(`**Todo:** ${daily.todo}`)}` + "\n" +
+        `${continueChar}  ${treeItem(`**Blockers:** ${blockerText}`, true)}` + "\n" +
+        `${continueChar}\n`
+    );
+}
 
 export const reportUtils = {
-    async sendOrUpdateDailyReport(client: Client, project: any, dateStr: string) {
+    async sendOrUpdateDailyReport(client: Client, project: Project, dateStr: string): Promise<void> {
         try {
             if (!project.channel_id) {
                 Logger.warn(`No daily report channel configured for project ${project.name}`);
@@ -31,7 +65,7 @@ export const reportUtils = {
             const { start, end } = dateUtils.getLocalDayBoundaries(dateStr);
             const dailies = await dailyService.getDailiesForProjectToday(project.id, start, end);
 
-            const dailyMap = new Map();
+            const dailyMap = new Map<string, DailyWithUser>();
             for (const daily of dailies) {
                 if (daily.users) {
                     dailyMap.set(daily.users.discord_id, daily);
@@ -41,28 +75,50 @@ export const reportUtils = {
             const submittedUserIds = new Set(dailyMap.keys());
             const pendingMembers = members.filter(m => !submittedUserIds.has(m.discord_id));
 
-            const embed = new EmbedBuilder()
-                .setTitle(`💣 Daily Standup - ${dateStr}`)
-                .setDescription(`Project: **${project.name}**\nUse \`/daily\` or click the button below to submit your update.`)
-                .setColor(0x4f46e5)
-                .setTimestamp();
+            // ─── Build the embed ──────────────────────────────
+            const completionBar = progressBar(dailyMap.size, members.length);
 
+            const embed = buildEmbed({
+                title: `${ICONS.bomb}  Daily Standup  ${ICONS.none}  ${dateStr}`,
+                description: [
+                    HEADERS.daily,
+                    "",
+                    `${ICONS.diamond} **Project:** ${project.name}`,
+                    `${ICONS.arrow} Use \`/daily\` or click the button below to submit.`,
+                    "",
+                    `\`${completionBar}\``,
+                ].join("\n"),
+                color: COLORS.daily,
+            });
+
+            // ─── Submissions Section ──────────────────────────
             if (dailyMap.size > 0) {
-                let submissionText = "";
+                const totalEntries = dailyMap.size;
+
+                // Build all entries using the shared formatter
+                const entries: string[] = [];
+                let entryIndex = 0;
                 for (const [discordId, daily] of dailyMap.entries()) {
-                    submissionText += `👤 **<@${discordId}>** (${daily.users.display_name})\n`;
-                    submissionText += `└ **Done:** ${daily.done}\n`;
-                    submissionText += `└ **Todo:** ${daily.todo}\n`;
-                    submissionText += `└ **Blockers:** ${daily.blockers && daily.blockers.trim() ? `⚠️ ${daily.blockers}` : "None"}\n\n`;
+                    entryIndex++;
+                    const isLast = entryIndex === totalEntries;
+                    const branchChar = isLast ? "└" : "├";
+                    const continueChar = isLast ? " " : "│";
+                    entries.push(formatSubmissionEntry(discordId, daily, branchChar, continueChar));
                 }
 
-                if (submissionText.length > 1000) {
+                const fullText = entries.join("");
+
+                if (fullText.length > 1000) {
+                    // Chunk entries into multiple fields to stay under Discord's 1024 char limit
                     let chunk = "";
                     let count = 1;
-                    for (const [discordId, daily] of dailyMap.entries()) {
-                        const entry = `👤 **<@${discordId}>** (${daily.users.display_name})\n└ **Done:** ${daily.done}\n└ **Todo:** ${daily.todo}\n└ **Blockers:** ${daily.blockers && daily.blockers.trim() ? `⚠️ ${daily.blockers}` : "None"}\n\n`;
+
+                    for (const entry of entries) {
                         if (chunk.length + entry.length > 1000) {
-                            embed.addFields({ name: `📝 Submissions (Part ${count})`, value: chunk });
+                            embed.addFields({
+                                name: `${sectionTitle(ICONS.sparkle, `Submissions (Part ${count})`)}`,
+                                value: chunk
+                            });
                             chunk = entry;
                             count++;
                         } else {
@@ -70,63 +126,78 @@ export const reportUtils = {
                         }
                     }
                     if (chunk) {
-                        embed.addFields({ name: `📝 Submissions (${dailyMap.size}/${members.length})`, value: chunk });
+                        embed.addFields({
+                            name: `${ICONS.sparkle}  Submissions (${dailyMap.size}/${members.length})`,
+                            value: chunk
+                        });
                     }
                 } else {
-                    embed.addFields({ name: `📝 Submissions (${dailyMap.size}/${members.length})`, value: submissionText });
+                    embed.addFields({
+                        name: `${ICONS.sparkle}  Submissions (${dailyMap.size}/${members.length})`,
+                        value: fullText
+                    });
                 }
             } else {
-                embed.addFields({ name: `📝 Submissions (0/${members.length})`, value: "*(No submissions yet)*" });
+                embed.addFields({
+                    name: `${ICONS.sparkle}  Submissions (0/${members.length})`,
+                    value: `*${ICONS.pending} No submissions yet*`
+                });
             }
 
+            // ─── Pending Section ──────────────────────────────
             if (pendingMembers.length > 0) {
                 const pendingMentions = pendingMembers.map(m => `<@${m.discord_id}>`).join(", ");
                 embed.addFields({
-                    name: "⏳ Pending",
+                    name: `${ICONS.clock}  Pending`,
                     value: pendingMentions.length > 1020 ? pendingMentions.substring(0, 1020) + "..." : pendingMentions
                 });
             } else {
                 embed.addFields({
-                    name: "⏳ Pending",
-                    value: "🎉 Everyone has submitted today!"
+                    name: `${ICONS.clock}  Pending`,
+                    value: `${ICONS.success} Everyone has submitted today!`
                 });
             }
 
+            // ─── Button ───────────────────────────────────────
             const button = new ButtonBuilder()
                 .setCustomId("submit_daily_btn")
-                .setLabel("Submit Daily Report")
-                .setStyle(ButtonStyle.Primary)
-                .setEmoji("📝");
+                .setLabel("  Submit Daily Report")
+                .setStyle(ButtonStyle.Primary);
 
             const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
 
-            const channel = await client.channels.fetch(project.channel_id);
-            if (!channel || !channel.isTextBased() || typeof (channel as any).send !== "function") {
+            // Use cache first, then fetch — avoids unnecessary API calls
+            const channel = client.channels.cache.get(project.channel_id)
+                ?? await client.channels.fetch(project.channel_id);
+
+            if (!channel || !channel.isTextBased()) {
                 Logger.warn(`Channel ${project.channel_id} is not sendable, not text-based, or not found.`);
                 return;
             }
 
-            const messages = await (channel as any).messages.fetch({ limit: 50 });
-            const reportMsg = messages.find((m: any) => 
-                m.author.id === client.user?.id && 
-                m.embeds.length > 0 && 
-                m.embeds[0].title === `💣 Daily Standup - ${dateStr}`
+            const sendableChannel = channel as TextChannel | NewsChannel;
+            const messages = await sendableChannel.messages.fetch({ limit: 50 });
+            const titleMatch = `${ICONS.bomb}  Daily Standup  ${ICONS.none}  ${dateStr}`;
+            const reportMsg: Message | undefined = messages.find((m: Message) =>
+                m.author.id === client.user?.id &&
+                m.embeds.length > 0 &&
+                m.embeds[0]!.title === titleMatch
             );
 
             if (reportMsg) {
                 await reportMsg.edit({ embeds: [embed], components: [row] });
             } else {
-                await (channel as any).send({ embeds: [embed], components: [row] });
+                await sendableChannel.send({ embeds: [embed], components: [row] });
             }
         } catch (err) {
             Logger.error(`Failed to update daily report for project ${project.name}:`, err);
         }
     },
 
-    async showDailyModal(interaction: any) {
+    async showDailyModal(interaction: ButtonInteraction | ChatInputCommandInteraction): Promise<void> {
         const modal = new ModalBuilder()
             .setCustomId("daily_modal")
-            .setTitle("Daily Standup Report");
+            .setTitle(`${ICONS.bomb} Daily Standup Report`);
 
         const doneInput = new TextInputBuilder()
             .setCustomId("done")
@@ -157,7 +228,7 @@ export const reportUtils = {
         await interaction.showModal(modal);
     },
 
-    isDailyOpen(project: any): boolean {
+    isDailyOpen(project: Project): boolean {
         if (!project.daily_time || !project.weekdays || project.daily_period === null || project.daily_period === undefined) {
             return true;
         }
@@ -167,10 +238,10 @@ export const reportUtils = {
         const tzInfo = dateUtils.getDateTimeInTimezone(now, timezone);
 
         const [startH, startM] = project.daily_time.split(":").map(Number);
-        const startMinutes = startH * 60 + startM;
+        const startMinutes = (startH ?? 0) * 60 + (startM ?? 0);
 
         const [currentH, currentM] = tzInfo.time.split(":").map(Number);
-        const currentMinutes = currentH * 60 + currentM;
+        const currentMinutes = (currentH ?? 0) * 60 + (currentM ?? 0);
 
         const endMinutes = startMinutes + project.daily_period;
         const weekdays = project.weekdays.split(",").map((d: string) => d.trim().toLowerCase());

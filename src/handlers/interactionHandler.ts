@@ -6,6 +6,7 @@ import { userService } from "../services/userService.js";
 import { dailyService } from "../services/dailyService.js";
 import { dateUtils } from "../utils/dateUtils.js";
 import { reportUtils } from "../utils/reportUtils.js";
+import { ICONS, errorMsg, successMsg, warningMsg } from "../utils/theme.js";
 
 export async function handleInteraction(interaction: Interaction) {
     try {
@@ -23,7 +24,7 @@ export async function handleInteraction(interaction: Interaction) {
 
             if (!interaction.guildId) {
                 await interaction.reply({
-                    content: "❌ This button can only be clicked inside a Discord server.",
+                    content: errorMsg("This button can only be clicked inside a Discord server."),
                     flags: MessageFlags.Ephemeral,
                 });
                 return;
@@ -32,7 +33,7 @@ export async function handleInteraction(interaction: Interaction) {
             const project = await projectService.getProjectByGuild(interaction.guildId);
             if (!project) {
                 await interaction.reply({
-                    content: "❌ No project exists for this server.",
+                    content: errorMsg("No project exists for this server."),
                     flags: MessageFlags.Ephemeral,
                 });
                 return;
@@ -41,7 +42,7 @@ export async function handleInteraction(interaction: Interaction) {
             const member = await userService.getMember(interaction.user.id, project.id);
             if (!member) {
                 await interaction.reply({
-                    content: "❌ You are not a member of this project. Join using `/join_project` with the invite code.",
+                    content: errorMsg("You are not a member of this project. Join using `/join_project` with the invite code."),
                     flags: MessageFlags.Ephemeral,
                 });
                 return;
@@ -52,7 +53,7 @@ export async function handleInteraction(interaction: Interaction) {
                 const dailyTime = project.daily_time ? project.daily_time.substring(0, 5) : "N/A";
                 const period = project.daily_period ? `${project.daily_period}m` : "N/A";
                 await interaction.reply({
-                    content: `❌ The daily standup submission period is closed. It is only open for ${period} starting at ${dailyTime}.`,
+                    content: errorMsg(`The daily standup submission period is closed. It is only open for ${period} starting at ${dailyTime}.`),
                     flags: MessageFlags.Ephemeral,
                 });
                 return;
@@ -67,7 +68,7 @@ export async function handleInteraction(interaction: Interaction) {
 
             if (!interaction.guildId) {
                 await interaction.reply({
-                    content: "❌ This button can only be clicked inside a Discord server.",
+                    content: errorMsg("This button can only be clicked inside a Discord server."),
                     flags: MessageFlags.Ephemeral,
                 });
                 return;
@@ -75,7 +76,7 @@ export async function handleInteraction(interaction: Interaction) {
 
             if (!interaction.memberPermissions?.has("Administrator")) {
                 await interaction.reply({
-                    content: "❌ Only server administrators can confirm finishing the project.",
+                    content: errorMsg("Only server administrators can confirm finishing the project."),
                     flags: MessageFlags.Ephemeral,
                 });
                 return;
@@ -87,7 +88,7 @@ export async function handleInteraction(interaction: Interaction) {
             await projectService.deleteProject(projectId);
 
             await interaction.editReply({
-                content: "✅ The project and all associated data (members, sprints, dailies) have been successfully deleted.",
+                content: successMsg("The project and all associated data (members, sprints, dailies) have been successfully deleted."),
                 embeds: [],
                 components: []
             });
@@ -99,7 +100,7 @@ export async function handleInteraction(interaction: Interaction) {
 
             if (!interaction.guildId) {
                 await interaction.reply({
-                    content: "❌ This modal can only be submitted inside a Discord server.",
+                    content: errorMsg("This modal can only be submitted inside a Discord server."),
                     flags: MessageFlags.Ephemeral,
                 });
                 return;
@@ -114,7 +115,7 @@ export async function handleInteraction(interaction: Interaction) {
             const project = await projectService.getProjectByGuild(interaction.guildId);
             if (!project) {
                 await interaction.editReply({
-                    content: "❌ Project not found.",
+                    content: errorMsg("Project not found."),
                 });
                 return;
             }
@@ -122,7 +123,7 @@ export async function handleInteraction(interaction: Interaction) {
             const member = await userService.getMember(interaction.user.id, project.id);
             if (!member) {
                 await interaction.editReply({
-                    content: "❌ Member not found.",
+                    content: errorMsg("Member not found."),
                 });
                 return;
             }
@@ -138,9 +139,9 @@ export async function handleInteraction(interaction: Interaction) {
                 await dailyService.createDaily(member.id, project.id, done, todo, blockers);
             }
 
-            let responseText = "✅ Your daily standup has been submitted successfully!";
+            let responseText = successMsg("Your daily standup has been submitted successfully!");
             if (!project.channel_id) {
-                responseText += "\n⚠️ *Note: No daily report channel has been configured for this project yet. Ask a project leader to run `/setup_channel` to enable the standup dashboard.*";
+                responseText += `\n${warningMsg("*No daily report channel has been configured for this project yet. Ask a project leader to run `/setup_channel` to enable the standup dashboard.*")}`;
             }
 
             await interaction.editReply({ content: responseText });
@@ -158,8 +159,8 @@ export async function handleInteraction(interaction: Interaction) {
         }
 
         const errorMessage = error && typeof error === "object" && "message" in error && typeof error.message === "string"
-            ? `❌ Error: ${error.message}`
-            : "❌ Error while processing this action.";
+            ? errorMsg(`Error: ${error.message}`)
+            : errorMsg("Error while processing this action.");
 
         if (interaction.replied || interaction.deferred) {
             await interaction.editReply({ content: errorMessage }).catch(console.error);
