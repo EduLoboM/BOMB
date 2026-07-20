@@ -2,7 +2,7 @@
 
 # 💣 BOMB
 
-**The name was an inside joke but the results are for real though.**
+**The name is an inside joke but the results are for real though.**
 
 *Automated async standups right inside your Discord server.*
 
