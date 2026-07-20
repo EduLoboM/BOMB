@@ -119,3 +119,5 @@ public/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+src/clearDb.ts
