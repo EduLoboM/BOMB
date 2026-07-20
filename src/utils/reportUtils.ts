@@ -155,5 +155,53 @@ export const reportUtils = {
 
         modal.addComponents(row1, row2, row3);
         await interaction.showModal(modal);
+    },
+
+    isDailyOpen(project: any): boolean {
+        if (!project.daily_time || !project.weekdays || project.daily_period === null || project.daily_period === undefined) {
+            return true;
+        }
+
+        const timezone = project.timezone || "UTC";
+        const now = new Date();
+        const tzInfo = dateUtils.getDateTimeInTimezone(now, timezone);
+
+        const [startH, startM] = project.daily_time.split(":").map(Number);
+        const startMinutes = startH * 60 + startM;
+
+        const [currentH, currentM] = tzInfo.time.split(":").map(Number);
+        const currentMinutes = currentH * 60 + currentM;
+
+        const endMinutes = startMinutes + project.daily_period;
+        const weekdays = project.weekdays.split(",").map((d: string) => d.trim().toLowerCase());
+
+        if (endMinutes <= 1440) {
+            // Window is entirely on the same day
+            if (!weekdays.includes(tzInfo.weekday)) {
+                return false;
+            }
+            return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+        } else {
+            // Window spans across midnight
+            // If we are before the daily start time today, we might be in yesterday's window
+            if (currentMinutes < startMinutes) {
+                // We are in the post-midnight window of yesterday's daily.
+                // We need to check if yesterday was a scheduled day.
+                const yesterdayDate = new Date(now);
+                yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+                const yesterdayTzInfo = dateUtils.getDateTimeInTimezone(yesterdayDate, timezone);
+
+                if (!weekdays.includes(yesterdayTzInfo.weekday)) {
+                    return false;
+                }
+                return currentMinutes <= (endMinutes - 1440);
+            } else {
+                // We are in today's window (after daily_time, before midnight)
+                if (!weekdays.includes(tzInfo.weekday)) {
+                    return false;
+                }
+                return true;
+            }
+        }
     }
 };
