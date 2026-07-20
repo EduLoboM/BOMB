@@ -5,7 +5,7 @@ function getRequiredEnv(name: string): string {
     const value = process.env[name];
 
     if (!value) {
-        throw new Error(`A variável ${name} não foi definida no arquivo .env.`);
+        throw new Error(`The variable ${name} was not defined in the .env file.`);
     }
 
     return value;
@@ -17,24 +17,24 @@ const guildId = getRequiredEnv("GUILD_ID");
 
 const commands = [
     new SlashCommandBuilder()
-        .setName("painel")
-        .setDescription("Abre o painel interativo do bot"),
+        .setName("panel")
+        .setDescription("Opens the bot's interactive panel"),
 ].map((command) => command.toJSON());
 
 const rest = new REST({ version: "10" }).setToken(token);
 
 async function deployCommands(): Promise<void> {
-    console.log("Registrando comandos no servidor de testes...");
+    console.log("Registering commands on the test server...");
 
     await rest.put(
         Routes.applicationGuildCommands(clientId, guildId),
         { body: commands },
     );
 
-    console.log("Comando /painel registrado.");
+    console.log("Command /panel registered.");
 }
 
 deployCommands().catch((error: unknown) => {
-    console.error("Não foi possível registrar os comandos:", error);
+    console.error("Failed to register commands:", error);
     process.exitCode = 1;
 });

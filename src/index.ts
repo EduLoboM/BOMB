@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { Logger } from "./logger.js";
 
 import {
     ActionRowBuilder,
@@ -7,6 +8,7 @@ import {
     Client,
     Events,
     GatewayIntentBits,
+    InteractionReplyOptions,
     MessageFlags,
     ModalBuilder,
     TextInputBuilder,
@@ -17,7 +19,7 @@ function getRequiredEnv(name: string): string {
     const value = process.env[name];
 
     if (!value) {
-        throw new Error(`A variável ${name} não foi definida no arquivo .env.`);
+        throw new Error(`The variable ${name} was not defined in the .env file.`);
     }
 
     return value;
@@ -30,20 +32,19 @@ const client = new Client({
 });
 
 client.once(Events.ClientReady, (readyClient) => {
-    console.log(`Bot conectado como ${readyClient.user.tag}.`);
+    Logger.success(`Bot connected successfully as \x1b[1m${readyClient.user.tag}\x1b[0m`);
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
     try {
-        // Comando /painel
         if (
             interaction.isChatInputCommand() &&
-            interaction.commandName === "painel"
+            interaction.commandName === "panel"
         ) {
+            Logger.info(`Command "/panel" executed by \x1b[1m${interaction.user.tag}\x1b[0m (ID: ${interaction.user.id})`);
             const openModalButton = new ButtonBuilder()
                 .setCustomId("open_registration_modal")
-                .setLabel("Abrir formulário")
-                .setEmoji("📝")
+                .setLabel("Open form")
                 .setStyle(ButtonStyle.Primary);
 
             const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -52,28 +53,27 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
             await interaction.reply({
                 content: [
-                    "## Painel do bot",
-                    "Use o botão abaixo para abrir o formulário.",
+                    "## Bot panel",
+                    "Use the button below to open the form.",
                 ].join("\n"),
                 components: [row],
             });
 
             return;
         }
-
-        // Clique no botão
         if (
             interaction.isButton() &&
             interaction.customId === "open_registration_modal"
         ) {
+            Logger.info(`Button "open_registration_modal" clicked by \x1b[1m${interaction.user.tag}\x1b[0m`);
             const modal = new ModalBuilder()
                 .setCustomId("registration_modal")
-                .setTitle("Cadastro");
+                .setTitle("Registration");
 
             const nameInput = new TextInputBuilder()
                 .setCustomId("name")
-                .setLabel("Qual é o seu nome?")
-                .setPlaceholder("Digite seu nome")
+                .setLabel("What is your name?")
+                .setPlaceholder("Type your name")
                 .setStyle(TextInputStyle.Short)
                 .setMinLength(2)
                 .setMaxLength(50)
@@ -81,8 +81,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
             const descriptionInput = new TextInputBuilder()
                 .setCustomId("description")
-                .setLabel("Conte um pouco sobre você")
-                .setPlaceholder("Escreva uma breve descrição")
+                .setLabel("Tell us a bit about yourself")
+                .setPlaceholder("Write a brief description")
                 .setStyle(TextInputStyle.Paragraph)
                 .setMaxLength(500)
                 .setRequired(false);
@@ -100,8 +100,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
             await interaction.showModal(modal);
             return;
         }
-
-        // Envio do modal
         if (
             interaction.isModalSubmit() &&
             interaction.customId === "registration_modal"
@@ -109,13 +107,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
             const name = interaction.fields.getTextInputValue("name");
             const description =
                 interaction.fields.getTextInputValue("description") ||
-                "Nenhuma descrição informada.";
+                "No description provided.";
+
+            Logger.info(`Modal "registration_modal" submitted by \x1b[1m${interaction.user.tag}\x1b[0m (Name: "${name}")`);
 
             await interaction.reply({
                 content: [
-                    "### Cadastro recebido",
-                    `**Nome:** ${name}`,
-                    `**Descrição:** ${description}`,
+                    "### Registration received",
+                    `**Name:** ${name}`,
+                    `**Description:** ${description}`,
                 ].join("\n"),
                 flags: MessageFlags.Ephemeral,
                 allowedMentions: {
@@ -124,14 +124,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
             });
         }
     } catch (error: unknown) {
-        console.error("Erro ao processar interação:", error);
+        Logger.error(`Error processing action for user \x1b[1m${interaction.user.tag}\x1b[0m`, error);
 
         if (!interaction.isRepliable()) {
             return;
         }
 
-        const errorResponse = {
-            content: "Ocorreu um erro ao executar essa ação.",
+        const errorResponse: InteractionReplyOptions = {
+            content: "Error while processing this action.",
             flags: MessageFlags.Ephemeral,
         };
 
@@ -144,6 +144,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 client.login(token).catch((error: unknown) => {
-    console.error("Não foi possível conectar o bot:", error);
+    Logger.error("Failed to connect the bot", error);
     process.exitCode = 1;
 });
