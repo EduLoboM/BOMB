@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { REST, Routes, SlashCommandBuilder } from "discord.js";
+import { REST, Routes, SlashCommandBuilder, PermissionFlagsBits, ChannelType } from "discord.js";
 
 function getRequiredEnv(name: string): string {
     const value = process.env[name];
@@ -17,8 +17,73 @@ const guildId = getRequiredEnv("GUILD_ID");
 
 const commands = [
     new SlashCommandBuilder()
-        .setName("panel")
-        .setDescription("Opens the bot's interactive panel"),
+        .setName("create_project")
+        .setDescription("Create a new project in the current server")
+        .addStringOption((option) =>
+            option
+                .setName("name")
+                .setDescription("The name of the project")
+                .setRequired(true)
+        )
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder()
+        .setName("join_project")
+        .setDescription("Join an existing project by invite code")
+        .addStringOption((option) =>
+            option
+                .setName("code")
+                .setDescription("The invite/access code of the project")
+                .setRequired(true)
+        ),
+    new SlashCommandBuilder()
+        .setName("project_status")
+        .setDescription("View project config, members & sprint status"),
+    new SlashCommandBuilder()
+        .setName("setup_channel")
+        .setDescription("Set the channel for daily reports")
+        .addChannelOption((option) =>
+            option
+                .setName("channel")
+                .setDescription("The channel where daily reports will be posted")
+                .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+                .setRequired(true)
+        )
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder()
+        .setName("setup_daily")
+        .setDescription("Schedule standup reminders (e.g. 10:00, mon,tue,wed)")
+        .addStringOption((option) =>
+            option
+                .setName("time")
+                .setDescription("The time of the standup (HH:MM format)")
+                .setRequired(true)
+        )
+        .addStringOption((option) =>
+            option
+                .setName("days")
+                .setDescription("Comma-separated weekdays (e.g. mon,tue,wed)")
+                .setRequired(true)
+        )
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder()
+        .setName("setup_sprint")
+        .setDescription("Define sprint start date & duration")
+        .addStringOption((option) =>
+            option
+                .setName("start")
+                .setDescription("Start date of the sprint (YYYY-MM-DD or 'today')")
+                .setRequired(true)
+        )
+        .addIntegerOption((option) =>
+            option
+                .setName("days")
+                .setDescription("Duration of the sprint in days")
+                .setRequired(true)
+        )
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder()
+        .setName("daily")
+        .setDescription("Manually open the daily modal (if you missed the alert)"),
 ].map((command) => command.toJSON());
 
 const rest = new REST({ version: "10" }).setToken(token);
@@ -31,7 +96,7 @@ async function deployCommands(): Promise<void> {
         { body: commands },
     );
 
-    console.log("Command /panel registered.");
+    console.log("Slash commands registered successfully.");
 }
 
 deployCommands().catch((error: unknown) => {
