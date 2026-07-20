@@ -34,6 +34,17 @@ export const daily: Command = {
             return;
         }
 
+        const isOpen = reportUtils.isDailyOpen(project);
+        if (!isOpen) {
+            const dailyTime = project.daily_time ? project.daily_time.substring(0, 5) : "N/A";
+            const period = project.daily_period ? `${project.daily_period}m` : "N/A";
+            await interaction.reply({
+                content: `❌ The daily standup submission period is closed. It is only open for ${period} starting at ${dailyTime}.`,
+                flags: MessageFlags.Ephemeral,
+            });
+            return;
+        }
+
         await reportUtils.showDailyModal(interaction);
     }
 };

@@ -20,6 +20,7 @@ export const setupSprint: Command = {
 
         const startInput = interaction.options.getString("start", true).trim().toLowerCase();
         const daysInput = interaction.options.getInteger("days", true);
+        const repeatInput = interaction.options.getBoolean("repeat", true);
 
         if (daysInput <= 0) {
             await interaction.editReply({
@@ -27,18 +28,6 @@ export const setupSprint: Command = {
             });
             return;
         }
-
-        const startDate = dateUtils.parseStartDate(startInput);
-
-        if (isNaN(startDate.getTime())) {
-            await interaction.editReply({
-                content: "❌ Invalid start date format! Use `YYYY-MM-DD` or `today`.",
-            });
-            return;
-        }
-
-        const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + daysInput - 1);
 
         const project = await projectService.getProjectByGuild(interaction.guildId);
         if (!project) {
@@ -48,21 +37,52 @@ export const setupSprint: Command = {
             return;
         }
 
+        let startDateStr = "";
+        if (startInput === "today") {
+            const timezone = project.timezone || "UTC";
+            const tzInfo = dateUtils.getDateTimeInTimezone(new Date(), timezone);
+            startDateStr = tzInfo.dateString;
+        } else {
+            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+            if (!dateRegex.test(startInput)) {
+                await interaction.editReply({
+                    content: "❌ Invalid start date format! Use `YYYY-MM-DD` (e.g. `2026-07-20`) or `today`.",
+                });
+                return;
+            }
+            const [y, m, d] = startInput.split("-").map(Number);
+            const testDate = new Date(Date.UTC(y, m - 1, d));
+            if (isNaN(testDate.getTime())) {
+                await interaction.editReply({
+                    content: "❌ Invalid start date! Please make sure it is a valid calendar date.",
+                });
+                return;
+            }
+            startDateStr = startInput;
+        }
+
+        const endDateStr = dateUtils.addDaysToDateString(startDateStr, daysInput - 1);
+
         const latestSprintNumber = await sprintService.getLatestSprintNumber(project.id);
         const nextSprintNumber = latestSprintNumber + 1;
 
+        // Create the initial sprint
         await sprintService.createSprint(
             project.id,
             nextSprintNumber,
-            dateUtils.getLocalDateString(startDate),
-            dateUtils.getLocalDateString(endDate)
+            startDateStr,
+            endDateStr
         );
+
+        // Update project defaults for repeat and duration
+        await projectService.updateProjectSprintSettings(project.id, repeatInput, daysInput);
 
         await interaction.editReply({
             content: `✅ **Sprint #${nextSprintNumber}** has been defined for project **${project.name}**!\n` +
-                `📅 **Start Date:** ${dateUtils.getLocalDateString(startDate)}\n` +
-                `🏁 **End Date:** ${dateUtils.getLocalDateString(endDate)}\n` +
-                `⏱️ **Duration:** ${daysInput} day(s)`,
+                `📅 **Start Date:** \`${startDateStr}\`\n` +
+                `🏁 **End Date:** \`${endDateStr}\`\n` +
+                `⏱️ **Duration:** ${daysInput} day(s)\n` +
+                `🔁 **Auto-Repeat:** ${repeatInput ? "Enabled" : "Disabled"}`,
         });
     }
 };

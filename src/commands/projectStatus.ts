@@ -30,7 +30,7 @@ export const projectStatus: Command = {
         const members = await userService.getProjectMembers(project.id);
         const sprints = await sprintService.getSprints(project.id);
 
-        let sprintStatusText = "No sprints configured. Use `/setup_sprint` to define a sprint.";
+        let sprintStatusText = "N/A";
         if (sprints.length > 0) {
             const todayStr = dateUtils.getLocalDateString();
             const currentSprint = sprints.find(s => s.start_date <= todayStr && todayStr <= s.end_date);
@@ -60,9 +60,14 @@ export const projectStatus: Command = {
             }
         }
 
-        const dailyTimeText = project.daily_time ? project.daily_time.substring(0, 5) : "Not configured";
-        const weekdaysText = project.weekdays ? project.weekdays.toUpperCase() : "Not configured";
-        const channelText = project.channel_id ? `<#${project.channel_id}>` : "Not configured";
+        const dailyTimeText = project.daily_time ? project.daily_time.substring(0, 5) : "N/A";
+        const weekdaysText = project.weekdays ? project.weekdays.toUpperCase() : "N/A";
+        const dailyPeriodText = project.daily_period ? `${project.daily_period} minute(s)` : "N/A";
+        const timezoneText = project.timezone || "UTC";
+        const channelText = project.channel_id ? `<#${project.channel_id}>` : "N/A";
+
+        const sprintRepeatText = project.sprint_repeat ? "Enabled" : "Disabled";
+        const sprintDurationText = project.sprint_duration ? `${project.sprint_duration} day(s)` : "N/A";
 
         const memberCount = members.length;
         const memberListText = members.length > 0
@@ -76,8 +81,9 @@ export const projectStatus: Command = {
             .addFields(
                 { name: "🔑 Access Code", value: `\`${project.access_code}\``, inline: true },
                 { name: "📢 Report Channel", value: channelText, inline: true },
-                { name: "⏱️ Daily Schedule", value: `**Time:** ${dailyTimeText}\n**Days:** ${weekdaysText}`, inline: false },
+                { name: "⏱️ Daily Schedule", value: `**Time:** ${dailyTimeText}\n**Days:** ${weekdaysText}\n**Open Window:** ${dailyPeriodText}\n**Timezone:** ${timezoneText}`, inline: false },
                 { name: "🏃 Sprint Status", value: sprintStatusText, inline: false },
+                { name: "🔁 Sprint Auto-Repeat", value: `**Auto-Repeat:** ${sprintRepeatText}\n**Default Duration:** ${sprintDurationText}`, inline: false },
                 { name: `👥 Team Members (${memberCount})`, value: memberListText, inline: false }
             );
 

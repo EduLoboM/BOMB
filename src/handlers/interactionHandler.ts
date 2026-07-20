@@ -47,7 +47,50 @@ export async function handleInteraction(interaction: Interaction) {
                 return;
             }
 
+            const isOpen = reportUtils.isDailyOpen(project);
+            if (!isOpen) {
+                const dailyTime = project.daily_time ? project.daily_time.substring(0, 5) : "N/A";
+                const period = project.daily_period ? `${project.daily_period}m` : "N/A";
+                await interaction.reply({
+                    content: `❌ The daily standup submission period is closed. It is only open for ${period} starting at ${dailyTime}.`,
+                    flags: MessageFlags.Ephemeral,
+                });
+                return;
+            }
+
             await reportUtils.showDailyModal(interaction);
+            return;
+        }
+
+        if (interaction.isButton() && interaction.customId.startsWith("confirm_finish_project_")) {
+            Logger.info(`Button "confirm_finish_project_" clicked by \x1b[1m${interaction.user.tag}\x1b[0m (ID: ${interaction.user.id})`);
+
+            if (!interaction.guildId) {
+                await interaction.reply({
+                    content: "❌ This button can only be clicked inside a Discord server.",
+                    flags: MessageFlags.Ephemeral,
+                });
+                return;
+            }
+
+            if (!interaction.memberPermissions?.has("Administrator")) {
+                await interaction.reply({
+                    content: "❌ Only server administrators can confirm finishing the project.",
+                    flags: MessageFlags.Ephemeral,
+                });
+                return;
+            }
+
+            await interaction.deferUpdate();
+
+            const projectId = interaction.customId.replace("confirm_finish_project_", "");
+            await projectService.deleteProject(projectId);
+
+            await interaction.editReply({
+                content: "✅ The project and all associated data (members, sprints, dailies) have been successfully deleted.",
+                embeds: [],
+                components: []
+            });
             return;
         }
 

@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction, MessageFlags } from "discord.js";
 import { Command } from "./commandInterface.js";
 import { projectService } from "../services/projectService.js";
+import { dateUtils } from "../utils/dateUtils.js";
 
 export const setupDaily: Command = {
     name: "setup_daily",
@@ -18,11 +19,32 @@ export const setupDaily: Command = {
 
         const time = interaction.options.getString("time", true).trim();
         const days = interaction.options.getString("days", true).trim();
+        const periodInput = interaction.options.getString("period", true).trim().toLowerCase();
+        const timezoneInput = interaction.options.getString("timezone")?.trim() || "UTC";
 
         const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
         if (!timeRegex.test(time)) {
             await interaction.editReply({
                 content: "❌ Invalid time format! Please use 24-hour format: `HH:MM` (e.g. `10:00`, `14:30`, `09:15`).",
+            });
+            return;
+        }
+
+        // Parse period
+        const periodMinutes = dateUtils.parsePeriodToMinutes(periodInput);
+        if (periodMinutes === null || periodMinutes <= 0) {
+            await interaction.editReply({
+                content: "❌ Invalid period format! Please use formats like `30m`, `2h`, `1h30m`, or just minutes (e.g. `120`). Must be greater than 0.",
+            });
+            return;
+        }
+
+        // Validate timezone
+        try {
+            new Intl.DateTimeFormat("en-US", { timeZone: timezoneInput });
+        } catch (e) {
+            await interaction.editReply({
+                content: `❌ Invalid timezone: \`${timezoneInput}\`. Please use standard IANA timezone names (e.g. \`America/Sao_Paulo\`, \`UTC\`, \`Europe/London\`).`,
             });
             return;
         }
@@ -77,12 +99,14 @@ export const setupDaily: Command = {
             return;
         }
 
-        await projectService.updateProjectSchedule(project.id, `${time}:00`, weekdaysStr);
+        await projectService.updateProjectSchedule(project.id, `${time}:00`, weekdaysStr, periodMinutes, timezoneInput);
 
         await interaction.editReply({
             content: `✅ Standup schedule for project **${project.name}** has been updated!\n` +
-                `⏱️ **Time:** \`${time}\` (Server Time)\n` +
-                `📅 **Days:** \`${weekdaysStr.toUpperCase()}\``,
+                `⏱️ **Time:** \`${time}\` (Local Time)\n` +
+                `📅 **Days:** \`${weekdaysStr.toUpperCase()}\`\n` +
+                `⏳ **Open Period:** \`${periodInput}\` (${periodMinutes} minutes)\n` +
+                `🌐 **Timezone:** \`${timezoneInput}\``,
         });
     }
 };

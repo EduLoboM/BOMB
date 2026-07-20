@@ -6,6 +6,8 @@ import { setupChannel } from "./setupChannel.js";
 import { setupDaily } from "./setupDaily.js";
 import { setupSprint } from "./setupSprint.js";
 import { daily } from "./daily.js";
+import { sprintRepeat } from "./sprintRepeat.js";
+import { finishProject } from "./finishProject.js";
 
 export const commands = new Map<string, Command>([
     [createProject.name, createProject],
@@ -15,4 +17,6 @@ export const commands = new Map<string, Command>([
     [setupDaily.name, setupDaily],
     [setupSprint.name, setupSprint],
     [daily.name, daily],
+    [sprintRepeat.name, sprintRepeat],
+    [finishProject.name, finishProject],
 ]);

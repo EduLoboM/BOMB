@@ -64,6 +64,18 @@ const commands = [
                 .setDescription("Comma-separated weekdays (e.g. mon,tue,wed)")
                 .setRequired(true)
         )
+        .addStringOption((option) =>
+            option
+                .setName("period")
+                .setDescription("Daily open window duration (e.g., '30m', '2h', '1h30m', or minutes)")
+                .setRequired(true)
+        )
+        .addStringOption((option) =>
+            option
+                .setName("timezone")
+                .setDescription("IANA Timezone name (e.g. 'America/Sao_Paulo', 'UTC'). Defaults to UTC")
+                .setRequired(false)
+        )
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     new SlashCommandBuilder()
         .setName("setup_sprint")
@@ -80,6 +92,26 @@ const commands = [
                 .setDescription("Duration of the sprint in days")
                 .setRequired(true)
         )
+        .addBooleanOption((option) =>
+            option
+                .setName("repeat")
+                .setDescription("Automatically repeat this sprint when it ends")
+                .setRequired(true)
+        )
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder()
+        .setName("sprint_repeat")
+        .setDescription("Enable or disable automatic sprint repetition")
+        .addBooleanOption((option) =>
+            option
+                .setName("enabled")
+                .setDescription("True to enable auto-repeat, False to disable")
+                .setRequired(true)
+        )
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder()
+        .setName("finish_project")
+        .setDescription("Finish and permanently delete the project for this server")
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     new SlashCommandBuilder()
         .setName("daily")
