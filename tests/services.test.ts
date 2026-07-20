@@ -32,6 +32,8 @@ class MockSupabaseQuery {
     gte = vi.fn().mockReturnThis();
     not = vi.fn().mockReturnThis();
     order = vi.fn().mockReturnThis();
+    limit = vi.fn().mockReturnThis();
+    returns = vi.fn().mockReturnThis();
     single = vi.fn().mockImplementation(() => Promise.resolve({ data: this.dataVal, error: this.errorVal }));
     maybeSingle = vi.fn().mockImplementation(() => Promise.resolve({ data: this.dataVal, error: this.errorVal }));
     

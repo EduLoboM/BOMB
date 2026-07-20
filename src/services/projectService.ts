@@ -1,29 +1,32 @@
 import { supabase } from "../supabase.js";
+import type { Project } from "../types.js";
 
 export const projectService = {
-    async getProjectByGuild(guildId: string) {
+    async getProjectByGuild(guildId: string): Promise<Project | null> {
         const { data, error } = await supabase
             .from("projects")
             .select("*")
             .eq("guild_id", guildId)
+            .returns<Project[]>()
             .maybeSingle();
 
         if (error) throw error;
         return data;
     },
 
-    async getProjectByAccessCode(accessCode: string) {
+    async getProjectByAccessCode(accessCode: string): Promise<Project | null> {
         const { data, error } = await supabase
             .from("projects")
             .select("*")
             .eq("access_code", accessCode)
+            .returns<Project[]>()
             .maybeSingle();
 
         if (error) throw error;
         return data;
     },
 
-    async createProject(name: string, guildId: string, accessCode: string) {
+    async createProject(name: string, guildId: string, accessCode: string): Promise<Project> {
         const { data, error } = await supabase
             .from("projects")
             .insert({
@@ -32,13 +35,14 @@ export const projectService = {
                 access_code: accessCode,
             })
             .select()
+            .returns<Project[]>()
             .single();
 
         if (error) throw error;
         return data;
     },
 
-    async updateProjectChannel(projectId: string, channelId: string) {
+    async updateProjectChannel(projectId: string, channelId: string): Promise<void> {
         const { error } = await supabase
             .from("projects")
             .update({ channel_id: channelId })
@@ -47,7 +51,7 @@ export const projectService = {
         if (error) throw error;
     },
 
-    async updateProjectSchedule(projectId: string, dailyTime: string, weekdays: string, dailyPeriod: number, timezone: string) {
+    async updateProjectSchedule(projectId: string, dailyTime: string, weekdays: string, dailyPeriod: number, timezone: string): Promise<void> {
         const { error } = await supabase
             .from("projects")
             .update({
@@ -61,7 +65,7 @@ export const projectService = {
         if (error) throw error;
     },
 
-    async updateProjectSprintSettings(projectId: string, sprintRepeat: boolean, sprintDuration: number) {
+    async updateProjectSprintSettings(projectId: string, sprintRepeat: boolean, sprintDuration: number): Promise<void> {
         const { error } = await supabase
             .from("projects")
             .update({
@@ -73,28 +77,30 @@ export const projectService = {
         if (error) throw error;
     },
 
-    async getProjectsWithSprintRepeat() {
+    async getProjectsWithSprintRepeat(): Promise<Project[]> {
         const { data, error } = await supabase
             .from("projects")
             .select("*")
-            .eq("sprint_repeat", true);
+            .eq("sprint_repeat", true)
+            .returns<Project[]>();
 
         if (error) throw error;
         return data || [];
     },
 
-    async getAllScheduledProjects() {
+    async getAllScheduledProjects(): Promise<Project[]> {
         const { data, error } = await supabase
             .from("projects")
             .select("*")
             .not("daily_time", "is", null)
-            .not("weekdays", "is", null);
+            .not("weekdays", "is", null)
+            .returns<Project[]>();
 
         if (error) throw error;
-        return data;
+        return data || [];
     },
 
-    async deleteProject(projectId: string) {
+    async deleteProject(projectId: string): Promise<void> {
         const { error } = await supabase
             .from("projects")
             .delete()
