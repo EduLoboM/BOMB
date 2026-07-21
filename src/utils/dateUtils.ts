@@ -88,5 +88,26 @@ export const dateUtils = {
         const m = String(date.getUTCMonth() + 1).padStart(2, "0");
         const d = String(date.getUTCDate()).padStart(2, "0");
         return `${y}-${m}-${d}`;
+    },
+
+    normalizeTimezone(input: string): string {
+        if (!input) return "UTC";
+        const str = input.trim();
+        // Match basic offset like -3, +5, 3
+        const match1 = str.match(/^([+-]?)(\d{1,2})$/);
+        if (match1) {
+            const sign = match1[1] === "-" ? "-" : "+";
+            const hours = match1[2]!.padStart(2, "0");
+            return `${sign}${hours}:00`;
+        }
+        // Match offset with minutes like -3:00, +5:30
+        const match2 = str.match(/^([+-]?)(\d{1,2}):(\d{2})$/);
+        if (match2) {
+            const sign = match2[1] === "-" ? "-" : "+";
+            const hours = match2[2]!.padStart(2, "0");
+            const minutes = match2[3]!;
+            return `${sign}${hours}:${minutes}`;
+        }
+        return str;
     }
 };

@@ -24,7 +24,8 @@ export const setupDaily: Command = {
         const time = interaction.options.getString("time", true).trim();
         const days = interaction.options.getString("days", true).trim();
         const periodInput = interaction.options.getString("period", true).trim().toLowerCase();
-        const timezoneInput = interaction.options.getString("timezone")?.trim() || "UTC";
+        let timezoneInput = interaction.options.getString("timezone")?.trim() || "UTC";
+        timezoneInput = dateUtils.normalizeTimezone(timezoneInput);
 
         const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
         if (!timeRegex.test(time)) {
@@ -48,7 +49,7 @@ export const setupDaily: Command = {
             new Intl.DateTimeFormat("en-US", { timeZone: timezoneInput });
         } catch (e) {
             await interaction.editReply({
-                content: errorMsg(`Invalid timezone: \`${timezoneInput}\`. Please use standard IANA timezone names (e.g. \`America/Sao_Paulo\`, \`UTC\`, \`Europe/London\`).`),
+                content: errorMsg(`Invalid timezone: \`${timezoneInput}\`. Please use standard IANA timezone names (e.g. \`America/Sao_Paulo\`) or UTC offsets (e.g. \`-3\`, \`+05:30\`).`),
             });
             return;
         }

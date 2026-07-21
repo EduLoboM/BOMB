@@ -8,72 +8,72 @@ import { EmbedBuilder } from "discord.js";
 
 // ─── Color Palette ────────────────────────────────────
 export const COLORS = {
-    primary:   0x6366F1,  // Electric Indigo
-    success:   0x10B981,  // Emerald Glow
-    danger:    0xEF4444,  // Crimson Pulse
-    sprint:    0x8B5CF6,  // Violet Surge
-    daily:     0x3B82F6,  // Sapphire Blue
-    neutral:   0x64748B,  // Slate Ash
-    gold:      0xF59E0B,  // Amber Radiance
-    dark:      0x1E1B2E,  // Void Obsidian
+    primary: 0x6366F1,  // Electric Indigo
+    success: 0x10B981,  // Emerald Glow
+    danger: 0xEF4444,  // Crimson Pulse
+    sprint: 0x8B5CF6,  // Violet Surge
+    daily: 0x3B82F6,  // Sapphire Blue
+    neutral: 0x64748B,  // Slate Ash
+    gold: 0xF59E0B,  // Amber Radiance
+    dark: 0x1E1B2E,  // Void Obsidian
 } as const;
 
 // ─── Unicode Icon Map ─────────────────────────────────
 export const ICONS = {
     // Status
-    success:    "◆",
-    error:      "✖",
-    warning:    "▲",
-    info:       "◇",
-    pending:    "○",
-    active:     "●",
+    success: "◆",
+    error: "✖",
+    warning: "▲",
+    info: "◇",
+    pending: "○",
+    active: "●",
 
     // Entities
-    bomb:       "✦",
-    user:       "◉",
-    team:       "⬡",
-    key:        "⚿",
-    channel:    "▣",
+    bomb: "✦",
+    user: "◉",
+    team: "⬡",
+    key: "⚿",
+    channel: "▣",
 
     // Time & Schedule
-    clock:      "◷",
-    calendar:   "◫",
-    timer:      "⏱",
-    timezone:   "⊕",
+    clock: "◷",
+    calendar: "◫",
+    timer: "⏱",
+    timezone: "⊕",
 
     // Sprint
-    sprint:     "⟐",
-    repeat:     "↻",
-    flag:       "⚑",
-    finish:     "◈",
+    sprint: "⟐",
+    repeat: "↻",
+    flag: "⚑",
+    finish: "◈",
 
     // Misc
-    arrow:      "▸",
+    arrow: "▸",
     arrowRight: "►",
-    diamond:    "⬥",
-    dot:        "·",
-    star:       "★",
-    sparkle:    "✧",
-    bolt:       "⚡",
-    shield:     "⛉",
-    gear:       "⚙",
-    link:       "⬢",
-    check:      "✔",
-    cross:      "✘",
-    blocker:    "⊘",
-    none:       "—",
+    diamond: "⬥",
+    dot: "·",
+    star: "★",
+    sparkle: "✧",
+    bolt: "⚡",
+    shield: "⛉",
+    gear: "⚙",
+    link: "⬢",
+    check: "✔",
+    cross: "✘",
+    blocker: "⊘",
+    none: "—",
 } as const;
 
 // ─── Dividers & Decorators ────────────────────────────
 export const DIVIDERS = {
-    thin:       "─────────────────────────────",
-    thick:      "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-    double:     "═════════════════════════════",
-    dotted:     "· · · · · · · · · · · · · · ·",
-    dashed:     "- - - - - - - - - - - - - - -",
-    sparkle:    "✧ · ✧ · ✧ · ✧ · ✧ · ✧ · ✧ · ✧",
-    wave:       "∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿",
-    block:      "░▒▓█▓▒░ ░▒▓█▓▒░ ░▒▓█▓▒░",
+    thin: "─────────────────────────────",
+    thick: "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+    double: "═════════════════════════════",
+    dotted: "· · · · · · · · · · · · · · ·",
+    dashed: "- - - - - - - - - - - - - - -",
+    sparkle: "✧ · ✧ · ✧ · ✧ · ✧ · ✧ · ✧ · ✧",
+    wave: "∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿",
+    block: "░▒▓█▓▒░ ░▒▓█▓▒░ ░▒▓█▓▒░",
 } as const;
 
 // ─── ASCII Art Headers ────────────────────────────────
@@ -97,7 +97,7 @@ export const HEADERS = {
     sprint: [
         "```",
         "  ┌─────────────────────────────┐",
-        "  │  ⟐  SPRINT OVERVIEW         │",
+        "  │  ⟐  SPRINT OVERVIEW        │",
         "  └─────────────────────────────┘",
         "```",
     ].join("\n"),
@@ -105,7 +105,7 @@ export const HEADERS = {
     danger: [
         "```",
         "  ╔══════════════════════════════╗",
-        "  ║  ▲  DANGER ZONE             ║",
+        "  ║  ▲  DANGER ZONE              ║",
         "  ╚══════════════════════════════╝",
         "```",
     ].join("\n"),

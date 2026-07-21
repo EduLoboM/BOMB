@@ -64,7 +64,7 @@ const commands = [
         .addStringOption((option) =>
             option
                 .setName("timezone")
-                .setDescription("IANA Timezone name (e.g. 'America/Sao_Paulo', 'UTC'). Defaults to UTC")
+                .setDescription("IANA Timezone name or UTC offset (e.g. 'America/Sao_Paulo', '-3'). Defaults to UTC")
                 .setRequired(false)
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
