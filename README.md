@@ -2,9 +2,9 @@
 
 # 💣 BOMB
 
-**The name is an inside joke but the results are for real though.**
+**Automated async standups right inside your Discord server.**
 
-*Automated async standups right inside your Discord server.*
+*The name is an inside joke but the results are for real though.*
 
 [![Discord.js](https://img.shields.io/badge/discord.js-v14-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.js.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://typescriptlang.org)
@@ -22,23 +22,24 @@ No more chasing teammates for updates. The bot collects, formats, and publishes 
 
 ---
 
-## 🧩 Why BOMB Exists
+## 🎯 Why BOMB Exists
 
-> It's 11 PM. Deadline is tomorrow. You open the group chat and ask *"how's everyone doing?"* — silence.
-> Two hours later someone replies in a DM: *"sorry, I've been stuck since Tuesday but didn't want to bother anyone."*
+Agile ceremonies often fall apart in student and volunteer-led teams. 
 
-**Sound familiar?** In university projects and junior enterprises, the same pattern repeats:
+> *"We'll just sync on WhatsApp"* quickly turns into missed deadlines, silent blockers, and last-minute panic.
 
-- The **leader** wastes hours chasing people one-by-one for updates they'll never get on time
-- The **members** silently struggle with blockers they're too embarrassed to raise in front of the group and desappear from the project
-- Nobody **knows** what anyone else is actually working on until the night before delivery and the last day everyone runs like it's a 100m dash
-- Standup meetings get **skipped** because *"we'll just sync on WhatsApp"* and then nobody does
+**The common pitfalls:**
+- **Manual follow-ups:** Leaders waste hours micromanaging and chasing team members for basic status updates.
+- **Silent struggles:** Team members hide blockers and fail to claim tasks, delaying group progress. Feeling lost within the project, they ultimately stop contributing.
+- **Zero visibility:** The team operates in the dark until the day before delivery.
+- **Skipped rituals:** Traditional standups are hard to schedule and easily ignored.
 
-BOMB breaks this cycle. Instead of relying on social pressure or manual follow-ups, it creates a **low-friction, private, async ritual** — a 30-second form that runs on autopilot. Everyone reports, nobody is exposed, and the leader sees the full picture without asking a single question.
+**BOMB replaces the friction.** By pinging your team directly inside Discord with an automated, 30-second async form, BOMB ensures that everyone stays aligned. Blockers are raised without pressure, and leaders get a consolidated report delivered right to the channel. 
+
 
 ---
 
-## ⚡ How It Works
+## 🤖 How It Works
 
 ```mermaid
 flowchart LR
@@ -46,7 +47,7 @@ flowchart LR
     B --> C["Collect Responses"]
     C --> D["Publish Report"]
 
-    style A fill:#4f46e5,stroke:#4f46e5,color:#fff
+    style A fill:#25498a,stroke:#25498a,color:#fff
     style B fill:#0ea5e9,stroke:#0ea5e9,color:#fff
     style C fill:#f59e0b,stroke:#f59e0b,color:#fff
     style D fill:#22c55e,stroke:#22c55e,color:#fff
@@ -61,7 +62,7 @@ flowchart LR
 
 ---
 
-## 🚀 Getting Started
+## 🛠️ Getting Started
 
 ### Prerequisites
 
@@ -88,7 +89,7 @@ DISCORD_TOKEN=your_bot_token
 CLIENT_ID=your_app_client_id
 GUILD_ID=your_test_server_id
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your_anon_key
+SUPABASE_KEY=your_service_key
 ```
 
 ```bash
@@ -99,7 +100,7 @@ npm run dev
 
 ---
 
-## 📋 Commands
+## ⌨️ Commands
 
 All commands use Discord's native **Slash Commands** (`/`).
 
@@ -109,7 +110,7 @@ All commands use Discord's native **Slash Commands** (`/`).
 | `/join_project [code]` | 👤 Member | Join an existing project by invite code |
 | `/project_status` | 👤 Anyone | View project config, members & sprint status (falls back to N/A if not configured) |
 | `/setup_channel [#channel]` | 🔑 Leader | Set the channel for daily reports |
-| `/setup_daily [time] [days] [period]` | 🔑 Leader | Schedule standup reminders and set the open period (e.g. `10:00`, `mon,tue,wed`, `1h30m`). Submissions outside this window will be blocked |
+| `/setup_daily [time] [days] [period] [timezone]` | 🔑 Leader | Schedule standup reminders and set the open period (e.g. `10:00`, `mon,tue,wed`, `1h30m`). You can also provide an optional timezone offset (e.g. `-3`) or IANA name. Submissions outside this window will be blocked |
 | `/setup_sprint [start] [days] [repeat]` | 🔑 Leader | Define sprint start date, duration, and toggle automatic sprint repetition when it ends |
 | `/sprint_repeat [enabled]` | 🔑 Leader | Enable or disable automatic sprint repetition at any time |
 | `/finish_project` | 🔑 Leader | Finish and permanently delete the project for this server (with confirmation prompt) |
@@ -117,26 +118,30 @@ All commands use Discord's native **Slash Commands** (`/`).
 
 ---
 
-## 🏗 Architecture
+## 📐 Architecture
 
 ```
 BOMB/
 ├── tests/                   # Automated unit tests (Vitest)
+│   ├── commands.test.ts
 │   ├── dateUtils.test.ts
-│   └── reportUtils.test.ts
+│   ├── handlers.test.ts
+│   ├── reportUtils.test.ts
+│   ├── schedulers.test.ts
+│   └── services.test.ts
 ├── src/
 │   ├── commands/            # Discord slash commands definitions
 │   │   ├── commandInterface.ts
 │   │   ├── createProject.ts
 │   │   ├── daily.ts
+│   │   ├── finishProject.ts
 │   │   ├── index.ts
 │   │   ├── joinProject.ts
 │   │   ├── projectStatus.ts
 │   │   ├── setupChannel.ts
 │   │   ├── setupDaily.ts
 │   │   ├── setupSprint.ts
-│   │   ├── sprintRepeat.ts
-│   │   └── finishProject.ts
+│   │   └── sprintRepeat.ts
 │   ├── handlers/            # Interaction and event handlers
 │   │   └── interactionHandler.ts
 │   ├── scheduler/           # Standup cron scheduler service
@@ -146,14 +151,19 @@ BOMB/
 │   │   ├── projectService.ts
 │   │   ├── sprintService.ts
 │   │   └── userService.ts
-│   ├── utils/               # Date utilities and report compilers
+│   ├── utils/               # Date utilities, report compilers & theme
 │   │   ├── dateUtils.ts
-│   │   └── reportUtils.ts
+│   │   ├── reportUtils.ts
+│   │   └── theme.ts
+│   ├── clearDb.ts           # DB Cleanup helper
 │   ├── deployCommands.ts    # Slash commands registry builder
+│   ├── env.ts               # Environment variables helper
 │   ├── index.ts             # Main entrypoint and bot initializer
 │   ├── logger.ts            # Custom console logger helper
+│   ├── migration.ts         # DB Migration helper
 │   ├── schema.sql           # Database schema SQL commands
-│   └── supabase.ts          # Supabase client initializer
+│   ├── supabase.ts          # Supabase client initializer
+│   └── types.ts             # Global TS types definitions
 ├── .env                     # Environment variables
 ├── package.json
 └── tsconfig.json
@@ -172,7 +182,7 @@ BOMB/
 
 ```mermaid
 flowchart TD
-    P["<b>projects</b><br/>---<br/>id (uuid) PK<br/>• name (varchar)<br/>• access_code (varchar)<br/>• guild_id (varchar)<br/>• channel_id (varchar)<br/>• daily_time (time)<br/>• weekdays (varchar)<br/>• daily_period (int)<br/>• sprint_repeat (boolean)<br/>• sprint_duration (int)"]
+    P["<b>projects</b><br/>---<br/>id (uuid) PK<br/>• name (varchar)<br/>• access_code (varchar)<br/>• guild_id (varchar)<br/>• channel_id (varchar)<br/>• daily_time (time)<br/>• weekdays (varchar)<br/>• daily_period (int)<br/>• sprint_repeat (boolean)<br/>• sprint_duration (int)<br/>• timezone (varchar)"]
     
     U["<b>users</b><br/>---<br/>id (uuid) PK<br/>• discord_id (varchar)<br/>• project_id (uuid) FK<br/>• display_name (varchar)"]
     
@@ -185,15 +195,15 @@ flowchart TD
     P -->|tracks| D
     U -->|submits| D
 
-    style P fill:#4f46e5,stroke:#4f46e5,color:#fff,rx:8px,ry:8px
-    style U fill:#0ea5e9,stroke:#0ea5e9,color:#fff,rx:8px,ry:8px
-    style S fill:#f59e0b,stroke:#f59e0b,color:#fff,rx:8px,ry:8px
-    style D fill:#22c55e,stroke:#22c55e,color:#fff,rx:8px,ry:8px
+    style P fill:#9333ea,stroke:#9333ea,color:#fff,rx:8px,ry:8px
+    style U fill:#ec4899,stroke:#ec4899,color:#fff,rx:8px,ry:8px
+    style S fill:#e11d48,stroke:#e11d48,color:#fff,rx:8px,ry:8px
+    style D fill:#14b8a6,stroke:#14b8a6,color:#fff,rx:8px,ry:8px
 ```
 
 ---
 
-## 🗺 Roadmap
+## 🚧 Roadmap
 
 - [x] Core bot scaffold with discord.js v14
 - [x] Slash command deployment
@@ -207,7 +217,7 @@ flowchart TD
 
 ---
 
-## 🤝 Contributing
+## 🧑‍💻 Contributing
 
 Contributions are welcome! Feel free to open an **Issue** or submit a **Pull Request**.
 
