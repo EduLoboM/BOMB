@@ -2,16 +2,35 @@ import { supabase } from "../supabase.js";
 import type { Project } from "../types.js";
 
 export const projectService = {
-    async getProjectByGuild(guildId: string): Promise<Project | null> {
+    /**
+     * Gets all projects registered in a Discord server (guild).
+     */
+    async getProjectsByGuild(guildId: string): Promise<Project[]> {
         const { data, error } = await supabase
             .from("projects")
             .select("*")
             .eq("guild_id", guildId)
-            .returns<Project[]>()
-            .maybeSingle();
+            .returns<Project[]>();
 
         if (error) throw error;
-        return data;
+        return data || [];
+    },
+
+    /**
+     * Gets a single project by guild ID. If name is supplied, matches exact name;
+     * otherwise returns the default / single project if present.
+     */
+    async getProjectByGuild(guildId: string, projectName?: string): Promise<Project | null> {
+        const projects = await this.getProjectsByGuild(guildId);
+        if (projects.length === 0) return null;
+
+        if (projectName) {
+            const found = projects.find(p => p.name.toLowerCase() === projectName.toLowerCase());
+            return found || null;
+        }
+
+        // Default to the first created project if not specified
+        return projects[0] || null;
     },
 
     async getProjectByAccessCode(accessCode: string): Promise<Project | null> {
@@ -104,6 +123,24 @@ export const projectService = {
         const { error } = await supabase
             .from("projects")
             .delete()
+            .eq("id", projectId);
+
+        if (error) throw error;
+    },
+
+    async updateAutoRoles(projectId: string, enabled: boolean): Promise<void> {
+        const { error } = await supabase
+            .from("projects")
+            .update({ auto_roles: enabled })
+            .eq("id", projectId);
+
+        if (error) throw error;
+    },
+
+    async updateGamification(projectId: string, enabled: boolean): Promise<void> {
+        const { error } = await supabase
+            .from("projects")
+            .update({ gamification_enabled: enabled })
             .eq("id", projectId);
 
         if (error) throw error;

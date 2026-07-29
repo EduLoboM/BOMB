@@ -47,11 +47,11 @@ describe("Database Services Testing", () => {
 
     describe("projectService", () => {
         it("getProjectByGuild - Happy Path", async () => {
-            const projectMock = { id: "p1", name: "BOMB", guild_id: "g1" };
+            const projectMock = [{ id: "p1", name: "BOMB", guild_id: "g1" }];
             mockFrom.mockImplementation(() => new MockSupabaseQuery(projectMock, null) as any);
 
             const res = await projectService.getProjectByGuild("g1");
-            expect(res).toEqual(projectMock);
+            expect(res).toEqual(projectMock[0]);
             expect(mockFrom).toHaveBeenCalledWith("projects");
         });
 
@@ -79,20 +79,36 @@ describe("Database Services Testing", () => {
     describe("userService", () => {
         it("getProjectMembers - Happy Path", async () => {
             const membersMock = [
-                { id: "u1", discord_id: "d1", display_name: "Alice" },
-                { id: "u2", discord_id: "d2", display_name: "Bob" }
+                { users: { id: "u1", discord_id: "d1", display_name: "Alice" } },
+                { users: { id: "u2", discord_id: "d2", display_name: "Bob" } }
             ];
             mockFrom.mockImplementation(() => new MockSupabaseQuery(membersMock, null) as any);
 
             const res = await userService.getProjectMembers("p1");
-            expect(res).toEqual(membersMock);
-            expect(mockFrom).toHaveBeenCalledWith("users");
+            expect(res).toEqual([
+                { id: "u1", discord_id: "d1", display_name: "Alice" },
+                { id: "u2", discord_id: "d2", display_name: "Bob" }
+            ]);
+            expect(mockFrom).toHaveBeenCalledWith("project_members");
         });
 
         it("getProjectMembers - Sad Path", async () => {
             mockFrom.mockImplementation(() => new MockSupabaseQuery(null, new Error("User table not found")) as any);
 
             await expect(userService.getProjectMembers("p1")).rejects.toThrow("User table not found");
+        });
+
+        it("awardBadge and getUserBadges", async () => {
+            const badgesMock = [
+                { id: "b1", user_id: "u1", project_name: "Dragoon", description: "site de leaks", icon: "🐉" }
+            ];
+            mockFrom.mockImplementation(() => new MockSupabaseQuery(badgesMock, null) as any);
+
+            await userService.awardBadge("u1", "Dragoon", "site de leaks", "🐉");
+            expect(mockFrom).toHaveBeenCalledWith("user_badges");
+
+            const badges = await userService.getUserBadges("u1");
+            expect(badges).toEqual(badgesMock);
         });
     });
 
