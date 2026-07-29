@@ -2,9 +2,7 @@ import { supabase } from "../supabase.js";
 import type { Project } from "../types.js";
 
 export const projectService = {
-    /**
-     * Gets all projects registered in a Discord server (guild).
-     */
+
     async getProjectsByGuild(guildId: string): Promise<Project[]> {
         const { data, error } = await supabase
             .from("projects")
@@ -15,11 +13,6 @@ export const projectService = {
         if (error) throw error;
         return data || [];
     },
-
-    /**
-     * Gets a single project by guild ID. If name is supplied, matches exact name;
-     * otherwise returns the default / single project if present.
-     */
     async getProjectByGuild(guildId: string, projectName?: string): Promise<Project | null> {
         const projects = await this.getProjectsByGuild(guildId);
         if (projects.length === 0) return null;
@@ -28,8 +21,6 @@ export const projectService = {
             const found = projects.find(p => p.name.toLowerCase() === projectName.toLowerCase());
             return found || null;
         }
-
-        // Default to the first created project if not specified
         return projects[0] || null;
     },
 

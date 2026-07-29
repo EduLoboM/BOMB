@@ -2,9 +2,7 @@ import { supabase } from "../supabase.js";
 import type { User, ProjectMemberWithUser, UserBadge } from "../types.js";
 
 export const userService = {
-    /**
-     * Gets a global user by Discord ID.
-     */
+
     async getUserByDiscordId(discordId: string): Promise<User | null> {
         const { data, error } = await supabase
             .from("users")
@@ -16,10 +14,6 @@ export const userService = {
         if (error) throw error;
         return data;
     },
-
-    /**
-     * Legacy helper method for compatibility.
-     */
     async getMember(discordId: string, projectId: string): Promise<User | null> {
         const user = await this.getUserByDiscordId(discordId);
         if (!user) return null;
@@ -27,14 +21,10 @@ export const userService = {
         const isMember = await this.isMemberOfProject(user.id, projectId);
         return isMember ? user : null;
     },
-
-    /**
-     * Gets or creates a global RPG user profile.
-     */
     async getOrCreateUser(discordId: string, displayName: string): Promise<{ user: User; isNew: boolean }> {
         const existing = await this.getUserByDiscordId(discordId);
         if (existing) {
-            // Update display name if changed
+
             if (existing.display_name !== displayName) {
                 await supabase
                     .from("users")
@@ -64,10 +54,6 @@ export const userService = {
         if (error) throw error;
         return { user: data, isNew: true };
     },
-
-    /**
-     * Checks if a user is linked to a project.
-     */
     async isMemberOfProject(userId: string, projectId: string): Promise<boolean> {
         const { data, error } = await supabase
             .from("project_members")
@@ -80,10 +66,6 @@ export const userService = {
         if (error) throw error;
         return !!data;
     },
-
-    /**
-     * Links a global user to a project.
-     */
     async addMemberToProject(userId: string, projectId: string): Promise<void> {
         const { error } = await supabase
             .from("project_members")
@@ -94,19 +76,11 @@ export const userService = {
 
         if (error) throw error;
     },
-
-    /**
-     * Helper for joining project: gets/creates global user and links to project.
-     */
     async addMember(discordId: string, projectId: string, displayName: string): Promise<User> {
         const { user } = await this.getOrCreateUser(discordId, displayName);
         await this.addMemberToProject(user.id, projectId);
         return user;
     },
-
-    /**
-     * Gets all global users belonging to a project.
-     */
     async getProjectMembers(projectId: string): Promise<User[]> {
         const { data, error } = await supabase
             .from("project_members")
@@ -117,10 +91,6 @@ export const userService = {
         if (error) throw error;
         return (data || []).map(pm => pm.users).filter(Boolean);
     },
-
-    /**
-     * Gets leaderboard users ordered by XP descending.
-     */
     async getLeaderboard(projectId?: string, limitCount: number = 10): Promise<User[]> {
         if (projectId) {
             const members = await this.getProjectMembers(projectId);
@@ -137,10 +107,6 @@ export const userService = {
         if (error) throw error;
         return data || [];
     },
-
-    /**
-     * Awards a project completion badge to a user.
-     */
     async awardBadge(userId: string, projectName: string, description: string, icon: string = "🏆"): Promise<void> {
         const { error } = await supabase
             .from("user_badges")
@@ -153,10 +119,6 @@ export const userService = {
 
         if (error) throw error;
     },
-
-    /**
-     * Gets all project completion badges awarded to a user.
-     */
     async getUserBadges(userId: string): Promise<UserBadge[]> {
         const { data, error } = await supabase
             .from("user_badges")

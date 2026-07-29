@@ -14,7 +14,7 @@ export interface ClassDefinition {
 }
 
 export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
-    // 🟢 Gobbo Chain: Gobbo (T1) -> Angel Gobbo (T2, Lvl 5) -> Angel (T3, Lvl 15)
+
     "Gobbo": {
         name: "Gobbo",
         icon: "🍀",
@@ -40,8 +40,6 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         description: "Ascended celestial entity of supreme consistency.",
         passiveInfo: "50% chance for Critical Hit (Double XP) + 50 base XP + complete streak shield protection."
     },
-
-    // 🗡️ Spearman Chain: Spearman (T1) -> Sunflower Knight (T2, Lvl 5) -> Zombie Shieldman (T3, Lvl 15)
     "Spearman": {
         name: "Spearman",
         icon: "🗡️",
@@ -57,24 +55,31 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         tier: 2,
         description: "Radiant knight spreading warmth and morale across the server.",
         passiveInfo: "+75% XP bonus when submitting first + 30 XP team morale boost.",
-        evolvesTo: ["Zombie Shieldman"],
+        evolvesTo: ["Undead Shieldsman"],
         requiredLevelForEvo: 15
     },
-    "Zombie Shieldman": {
-        name: "Zombie Shieldman",
+    "Undead Shieldsman": {
+        name: "Undead Shieldsman",
         icon: "🧟‍♂️",
         tier: 3,
         description: "Undead guardian whose streak and speed never die.",
         passiveInfo: "+100% XP bonus when submitting first + 50 XP undead bonus + complete streak reset immunity."
     },
-
-    // 🐮 Mooladin Chain: Mooladin (T1) -> Heretic Mooladin (T3, Direct Lvl 15 Evo)
     "Mooladin": {
         name: "Mooladin",
         icon: "🐮",
         tier: 1,
         description: "Sturdy bovine defender with unwavering endurance.",
         passiveInfo: "+30% bonus to daily streak XP multipliers.",
+        evolvesTo: ["Iron Mooladin"],
+        requiredLevelForEvo: 5
+    },
+    "Iron Mooladin": {
+        name: "Iron Mooladin",
+        icon: "⛓️",
+        tier: 2,
+        description: "Heavy ironclad bovine guardian built like an impenetrable fortress.",
+        passiveInfo: "+45% bonus to daily streak XP multipliers + 15% chance for Iron Fortitude Crit (1.5x XP).",
         evolvesTo: ["Heretic Mooladin"],
         requiredLevelForEvo: 15
     },
@@ -85,8 +90,6 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         description: "Dark bovine warrior wielding chaotic demonic power.",
         passiveInfo: "+60% streak XP multiplier + 30% chance for Dark Chaos Crit (1.75x XP)."
     },
-
-    // 🩹 Healer Chain: Healer (T1) -> Druid (T2, Lvl 5) -> Moth Mage (T3, Lvl 15)
     "Healer": {
         name: "Healer",
         icon: "🩹",
@@ -112,8 +115,6 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         description: "Arcane scholar drawn to the light of progress.",
         passiveInfo: "+75 XP for blocker-free standups + 40 XP for detailed reports + 25% total XP boost."
     },
-
-    // 🐾 Beast Tamer Chain: Beast Tamer (T1) -> Beast Huntress (T2, Lvl 5) -> Lightbringer (T3, Lvl 15)
     "Beast Tamer": {
         name: "Beast Tamer",
         icon: "🐾",
@@ -139,14 +140,21 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         description: "Legendary beacon illuminating the entire guild.",
         passiveInfo: "+60 XP base bonus + 50 XP squad synergy + grants bonus aura to the team."
     },
-
-    // ✂️ Scissorpaw Chain: Scissorpaw (T1) -> Fox Musketeer (T3, Direct Lvl 15 Evo)
     "Scissorpaw": {
         name: "Scissorpaw",
         icon: "✂️",
         tier: 1,
         description: "Sharp-clawed adventurer that cuts through obstacles.",
         passiveInfo: "+40 XP bonus for blocker-free standups + 15% Crit chance.",
+        evolvesTo: ["Dashing Fencer"],
+        requiredLevelForEvo: 5
+    },
+    "Dashing Fencer": {
+        name: "Dashing Fencer",
+        icon: "🤺",
+        tier: 2,
+        description: "Flashy feline fencer darting across obstacles with flair and speed.",
+        passiveInfo: "+50 XP for blocker-free standups + 30% first-submission bonus + 22% Crit chance.",
         evolvesTo: ["Fox Musketeer"],
         requiredLevelForEvo: 15
     },
@@ -175,17 +183,11 @@ export interface XPResult {
 }
 
 export const gamificationService = {
-    /**
-     * Calculates required XP to reach a specific level.
-     */
+
     getXPForLevel(level: number): number {
         if (level <= 1) return 0;
         return Math.floor(100 * Math.pow(level - 1, 1.5));
     },
-
-    /**
-     * Calculates user level from total XP.
-     */
     calculateLevelFromXP(xp: number): number {
         let level = 1;
         while (this.getXPForLevel(level + 1) <= xp) {
@@ -193,17 +195,9 @@ export const gamificationService = {
         }
         return level;
     },
-
-    /**
-     * Gets default class for new users.
-     */
     getDefaultClass(): string {
         return "Gobbo";
     },
-
-    /**
-     * Checks if a user is eligible for evolution and returns available evolution options.
-     */
     getAvailableEvolutions(characterClass: string, level: number, classChosenAtLevel: number = 1): string[] {
         const classDef = CLASS_REGISTRY[characterClass];
         if (!classDef || !classDef.evolvesTo || classDef.evolvesTo.length === 0) return [];
@@ -222,10 +216,6 @@ export const gamificationService = {
 
         return [];
     },
-
-    /**
-     * Processes a daily standup submission, updating XP, streak, level, and class evolution status.
-     */
     async processDailySubmission(
         user: User,
         project: Project,
@@ -239,8 +229,6 @@ export const gamificationService = {
         const currentStreak = user.streak ?? 0;
         const maxStreak = user.max_streak ?? 0;
         const currentClass = user.character_class || this.getDefaultClass();
-
-        // 1. Calculate streak update
         const todayStr = new Date().toISOString().split("T")[0]!;
         let newStreak = currentStreak;
         const lastSub = user.last_submission_date ? new Date(user.last_submission_date).toISOString().split("T")[0] : null;
@@ -255,9 +243,9 @@ export const gamificationService = {
             } else if (!lastSub) {
                 newStreak = 1;
             } else {
-                // Streak reset protection for Angel and Zombie Shieldman
-                if (["Zombie Shieldman", "Angel"].includes(currentClass) && currentStreak > 0) {
-                    newStreak = currentStreak; // Protected!
+
+                if (["Undead Shieldsman", "Angel"].includes(currentClass) && currentStreak > 0) {
+                    newStreak = currentStreak;
                     Logger.info(`Streak protected by ${currentClass} passive for user ${user.id}`);
                 } else {
                     newStreak = 1;
@@ -266,8 +254,6 @@ export const gamificationService = {
         }
 
         const newMaxStreak = Math.max(maxStreak, newStreak);
-
-        // 2. Base XP & Base Additions
         let baseXP = 100;
         const passiveNotes: string[] = [];
 
@@ -277,19 +263,20 @@ export const gamificationService = {
         } else if (currentClass === "Angel") {
             baseXP += 50;
             passiveNotes.push("👼 Divine Base XP (+50 XP)");
-        } else if (currentClass === "Zombie Shieldman") {
+        } else if (currentClass === "Undead Shieldsman") {
             baseXP += 50;
             passiveNotes.push("🧟‍♂️ Undead Base XP (+50 XP)");
         } else if (currentClass === "Lightbringer") {
             baseXP += 60;
             passiveNotes.push("✨ Lightbringer Base XP (+60 XP)");
         }
-
-        // 3. Streak bonus (+10 per streak day up to +100) with class multipliers
         let streakMultiplier = 1.0;
         if (currentClass === "Mooladin") {
             streakMultiplier = 1.3;
             passiveNotes.push("🐮 Sturdy Streak Multiplier (x1.3)");
+        } else if (currentClass === "Iron Mooladin") {
+            streakMultiplier = 1.45;
+            passiveNotes.push("⛓️ Iron Streak Multiplier (x1.45)");
         } else if (currentClass === "Heretic Mooladin") {
             streakMultiplier = 1.6;
             passiveNotes.push("😈 Dark Streak Multiplier (x1.6)");
@@ -299,12 +286,8 @@ export const gamificationService = {
         }
 
         const streakBonus = Math.min(150, Math.floor(newStreak * 10 * streakMultiplier));
-
-        // 4. Class Passive Bonus
         let passiveBonus = 0;
         let isCrit = false;
-
-        // Early Bird First Submission Bonuses
         if (isFirstSubmissionToday) {
             if (currentClass === "Spearman") {
                 passiveBonus += Math.floor((baseXP + streakBonus) * 0.5);
@@ -312,16 +295,17 @@ export const gamificationService = {
             } else if (currentClass === "Sunflower Knight") {
                 passiveBonus += Math.floor((baseXP + streakBonus) * 0.75) + 30;
                 passiveNotes.push("🌻 Radiant Vanguard Bonus (+75% XP)");
-            } else if (currentClass === "Zombie Shieldman") {
+            } else if (currentClass === "Undead Shieldsman") {
                 passiveBonus += (baseXP + streakBonus);
                 passiveNotes.push("🧟‍♂️ Undead Bastion First Strike (+100% XP)");
+            } else if (currentClass === "Dashing Fencer") {
+                passiveBonus += Math.floor((baseXP + streakBonus) * 0.3);
+                passiveNotes.push("🤺 Dashing Speed Bonus (+30% XP)");
             } else if (currentClass === "Fox Musketeer") {
                 passiveBonus += Math.floor((baseXP + streakBonus) * 0.6);
                 passiveNotes.push("🦊 Fencer Precision Speed Bonus (+60% XP)");
             }
         }
-
-        // Blocker-Free Standup Bonuses
         if (hasNoBlockers) {
             if (currentClass === "Healer") {
                 passiveBonus += 35;
@@ -335,13 +319,14 @@ export const gamificationService = {
             } else if (currentClass === "Scissorpaw") {
                 passiveBonus += 40;
                 passiveNotes.push("✂️ Obstacle Cut (+40 XP)");
+            } else if (currentClass === "Dashing Fencer") {
+                passiveBonus += 50;
+                passiveNotes.push("🤺 Blocker Parry (+50 XP)");
             } else if (currentClass === "Fox Musketeer") {
                 passiveBonus += 60;
                 passiveNotes.push("🦊 Fencer Blocker Slice (+60 XP)");
             }
         }
-
-        // Detailed Update Bonuses (>100 characters)
         const updateLength = doneText.length + todoText.length;
         if (updateLength > 100) {
             if (currentClass === "Beast Tamer") {
@@ -358,13 +343,12 @@ export const gamificationService = {
                 passiveNotes.push("🦋 Arcane Report Detailed Update (+40 XP)");
             }
         }
-
-        // Critical Hit Calculations
         let critThreshold = 0;
         if (currentClass === "Gobbo") critThreshold = 0.20;
         else if (currentClass === "Angel Gobbo") critThreshold = 0.35;
         else if (currentClass === "Angel") critThreshold = 0.50;
         else if (currentClass === "Scissorpaw") critThreshold = 0.15;
+        else if (currentClass === "Dashing Fencer") critThreshold = 0.22;
         else if (currentClass === "Fox Musketeer") critThreshold = 0.30;
 
         if (critThreshold > 0 && Math.random() < critThreshold) {
@@ -382,8 +366,10 @@ export const gamificationService = {
         if (isCrit) {
             totalGained *= 2;
         }
-
-        // Dark Chaos Crit for Heretic Mooladin
+        if (currentClass === "Iron Mooladin" && Math.random() < 0.15) {
+            totalGained = Math.floor(totalGained * 1.5);
+            passiveNotes.push("⛓️ Iron Fortitude Crit! (1.5x XP)");
+        }
         if (currentClass === "Heretic Mooladin" && Math.random() < 0.30) {
             totalGained = Math.floor(totalGained * 1.75);
             passiveNotes.push("😈 Dark Chaos Crit! (1.75x XP)");
@@ -394,8 +380,6 @@ export const gamificationService = {
         const leveledUp = newLevel > currentLevel;
 
         const availableEvolutions = this.getAvailableEvolutions(currentClass, newLevel, user.class_chosen_at_level ?? 1);
-
-        // 5. Update Database
         const { error } = await supabase
             .from("users")
             .update({
@@ -426,10 +410,6 @@ export const gamificationService = {
             passiveNotes,
         };
     },
-
-    /**
-     * Changes user's class (for starting class selection or evolution).
-     */
     async changeUserClass(user: User, newClass: string): Promise<boolean> {
         const classDef = CLASS_REGISTRY[newClass];
         if (!classDef) {
@@ -438,8 +418,6 @@ export const gamificationService = {
 
         const isBaseClass = classDef.tier === 1;
         const updatePayload: Record<string, any> = { character_class: newClass };
-
-        // If switching base class path, record level when chosen
         if (isBaseClass) {
             updatePayload.class_chosen_at_level = user.level ?? 1;
         }
@@ -455,10 +433,6 @@ export const gamificationService = {
         }
         return true;
     },
-
-    /**
-     * Synchronizes Discord Role rewards for class evolutions on a server.
-     */
     async syncUserRole(guild: Guild, member: GuildMember, characterClass: string): Promise<void> {
         try {
             const classDef = CLASS_REGISTRY[characterClass];

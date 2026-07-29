@@ -1,8 +1,3 @@
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  BOMB — Central Type Definitions
-//  Database row types matching schema.sql exactly.
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 export interface Project {
     id: string;
     guild_id: string;
