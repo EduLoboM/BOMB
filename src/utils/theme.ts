@@ -1,130 +1,199 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  BOMB — Visual Design System
-//  All visual constants, formatters, and embed utilities.
-//  Zero emojis. Pure Unicode + ASCII art.
+//  BOMB — RPG Adventure Design System
+//  Theme: Cute Medieval Adventure (Anime / Adventure Time)
+//  ANSI colored headers, RPG emojis, class-based colors.
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 import { EmbedBuilder } from "discord.js";
 
-// ─── Color Palette ────────────────────────────────────
+// ─── Color Palette (Bright Adventure Colors) ──────────
 export const COLORS = {
-    primary: 0x6366F1,  // Electric Indigo
-    success: 0x10B981,  // Emerald Glow
-    danger: 0xEF4444,  // Crimson Pulse
-    sprint: 0x8B5CF6,  // Violet Surge
-    daily: 0x3B82F6,  // Sapphire Blue
-    neutral: 0x64748B,  // Slate Ash
-    gold: 0xF59E0B,  // Amber Radiance
-    dark: 0x1E1B2E,  // Void Obsidian
+    primary:   0x9B59B6,  // Amethyst Purple — main arcane brand
+    success:   0x2ECC71,  // Potion Green — healing / success
+    danger:    0xE74C3C,  // Dragon Flame — errors / danger
+    sprint:    0x8E44AD,  // Portal Purple — expeditions
+    daily:     0x3498DB,  // Quest Blue — daily quests
+    neutral:   0x95A5A6,  // Stone Gray — inactive / muted
+    gold:      0xF1C40F,  // Treasure Gold — rewards / loot
+    dark:      0x2C3E50,  // Night Sky — deep backgrounds
+    legendary: 0xFFD700,  // Legendary Gold — epic moments
 } as const;
 
-// ─── Unicode Icon Map ─────────────────────────────────
+// ─── Class-Specific Embed Colors ──────────────────────
+export const CLASS_COLORS: Record<string, number> = {
+    "Gobbo":            0x77DD77,  // Lucky Clover Green
+    "Angel Gobbo":      0xFFE66D,  // Divine Yellow
+    "Angel":            0xFFC857,  // Celestial Gold
+    "Spearman":         0xFF6B6B,  // Valor Red
+    "Sunflower Knight": 0xFFD93D,  // Sunflower Gold
+    "Zombie Shieldman": 0x6BCB77,  // Undead Green
+    "Mooladin":         0xD4A373,  // Earthy Brown
+    "Heretic Mooladin": 0x9D4EDD,  // Demonic Purple
+    "Healer":           0xFF85C0,  // Healing Pink
+    "Druid":            0x52B788,  // Nature Green
+    "Moth Mage":        0xC77DFF,  // Arcane Lavender
+    "Beast Tamer":      0xE9967A,  // Warm Salmon
+    "Beast Huntress":   0x48BFE3,  // Hunter Blue
+    "Lightbringer":     0xFFD700,  // Legendary Gold
+    "Scissorpaw":       0x00B4D8,  // Sharp Cyan
+    "Fox Musketeer":    0xFF8C42,  // Fox Orange
+};
+
+/** Returns the embed color matching a character class */
+export function getClassColor(className?: string): number {
+    return CLASS_COLORS[className || "Gobbo"] ?? COLORS.primary;
+}
+
+// ─── RPG Emoji Map ────────────────────────────────────
 export const ICONS = {
     // Status
-    success: "◆",
-    error: "✖",
-    warning: "▲",
-    info: "◇",
-    pending: "○",
-    active: "●",
+    success:    "✅",
+    error:      "❌",
+    warning:    "⚠️",
+    info:       "💡",
+    pending:    "⏳",
+    active:     "🔥",
 
     // Entities
-    bomb: "✦",
-    user: "◉",
-    team: "⬡",
-    key: "⚿",
-    channel: "▣",
+    bomb:       "💣",
+    user:       "⚔️",
+    team:       "🛡️",
+    key:        "🗝️",
+    channel:    "📡",
 
     // Time & Schedule
-    clock: "◷",
-    calendar: "◫",
-    timer: "⏱",
-    timezone: "⊕",
+    clock:      "⏰",
+    calendar:   "📅",
+    timer:      "⏱️",
+    timezone:   "🌍",
 
-    // Sprint
-    sprint: "⟐",
-    repeat: "↻",
-    flag: "⚑",
-    finish: "◈",
+    // Sprint / Expedition
+    sprint:     "🏁",
+    repeat:     "🔄",
+    flag:       "🚩",
+    finish:     "🎯",
+
+    // Adventure
+    quest:      "📜",
+    guild:      "🏰",
+    crown:      "👑",
+    potion:     "⚗️",
+    scroll:     "📜",
+    sword:      "🗡️",
+    shield:     "🛡️",
+    magic:      "🔮",
+    treasure:   "💎",
+    map:        "🗺️",
 
     // Misc
-    arrow: "▸",
+    arrow:      "▸",
     arrowRight: "►",
-    diamond: "⬥",
-    dot: "·",
-    star: "★",
-    sparkle: "✧",
-    bolt: "⚡",
-    shield: "⛉",
-    gear: "⚙",
-    link: "⬢",
-    check: "✔",
-    cross: "✘",
-    blocker: "⊘",
-    none: "—",
+    diamond:    "💠",
+    dot:        "·",
+    star:       "⭐",
+    sparkle:    "✨",
+    bolt:       "⚡",
+    gear:       "⚙️",
+    link:       "🔗",
+    check:      "✅",
+    cross:      "❌",
+    blocker:    "🚧",
+    none:       "—",
+    xp:         "🌟",
+    levelup:    "🎉",
+    streak:     "🔥",
+    badge:      "🏆",
 } as const;
+
+// ─── ANSI Color Utilities ─────────────────────────────
+// Discord supports ANSI escape codes inside ```ansi code blocks
+// for real colored text — one of the most modern visual features.
+
+const ESC = "\u001b";
+
+export const ANSI = {
+    RED:    31,
+    GREEN:  32,
+    YELLOW: 33,
+    BLUE:   34,
+    PINK:   35,
+    CYAN:   36,
+    WHITE:  37,
+} as const;
+
+/** Wraps text in ANSI escape codes for colored Discord code blocks */
+export function ansiColor(text: string, colorCode: number, bold: boolean = true): string {
+    const style = bold ? 1 : 0;
+    return `${ESC}[${style};${colorCode}m${text}${ESC}[0m`;
+}
+
+/** Creates a Discord \`\`\`ansi code block with colored lines */
+export function ansiBlock(lines: string[]): string {
+    return "```ansi\n" + lines.join("\n") + "\n```";
+}
 
 // ─── Dividers & Decorators ────────────────────────────
 export const DIVIDERS = {
-    thin: "─────────────────────────────",
-    thick: "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-    double: "═════════════════════════════",
-    dotted: "· · · · · · · · · · · · · · ·",
-    dashed: "- - - - - - - - - - - - - - -",
-    sparkle: "✧ · ✧ · ✧ · ✧ · ✧ · ✧ · ✧ · ✧",
-    wave: "∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿",
-    block: "░▒▓█▓▒░ ░▒▓█▓▒░ ░▒▓█▓▒░",
+    thin:     "─────────────────────────────",
+    thick:    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+    double:   "═════════════════════════════",
+    dotted:   "· · · · · · · · · · · · · · ·",
+    dashed:   "- - - - - - - - - - - - - - -",
+    sparkle:  "✦ ⋆ ✦ ⋆ ✦ ⋆ ✦ ⋆ ✦ ⋆ ✦ ⋆ ✦",
+    stars:    "⋆ ˚ ☆ ˚ ⋆ ˚ ☆ ˚ ⋆ ˚ ☆ ˚ ⋆",
+    quest:    "─── ⋆⋅☆⋅⋆ ──── ⋆⋅☆⋅⋆ ───",
+    scroll:   "═══════════════════════════════",
+    wave:     "∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿",
+    block:    "░▒▓█▓▒░ ░▒▓█▓▒░ ░▒▓█▓▒░",
 } as const;
 
-// ─── ASCII Art Headers ────────────────────────────────
+// ─── ANSI Art Headers ─────────────────────────────────
+// Colored box-drawing headers rendered inside ```ansi blocks.
+// Medieval scroll aesthetic with real colors in Discord.
+
 export const HEADERS = {
-    bomb: [
-        "```",
-        "  ╔══════════════════════════════╗",
-        "  ║   ✦  B · O · M · B  ✦       ║",
-        "  ╚══════════════════════════════╝",
-        "```",
-    ].join("\n"),
+    bomb: ansiBlock([
+        ansiColor("╔══════════════════════════════════╗", ANSI.YELLOW),
+        ansiColor("║    B  ·  O  ·  M  ·  B          ║", ANSI.WHITE),
+        ansiColor("║    Adventure Guild System        ║", ANSI.CYAN),
+        ansiColor("╚══════════════════════════════════╝", ANSI.YELLOW),
+    ]),
 
-    daily: [
-        "```",
-        "  ┌─────────────────────────────┐",
-        "  │  ◷  DAILY STANDUP REPORT    │",
-        "  └─────────────────────────────┘",
-        "```",
-    ].join("\n"),
+    daily: ansiBlock([
+        ansiColor("╔══════════════════════════════════╗", ANSI.YELLOW),
+        ansiColor("║  QUEST LOG  ·  DAILY EXPEDITION  ║", ANSI.CYAN),
+        ansiColor("╚══════════════════════════════════╝", ANSI.YELLOW),
+    ]),
 
-    sprint: [
-        "```",
-        "  ┌─────────────────────────────┐",
-        "  │  ⟐  SPRINT OVERVIEW        │",
-        "  └─────────────────────────────┘",
-        "```",
-    ].join("\n"),
+    sprint: ansiBlock([
+        ansiColor("╔══════════════════════════════════╗", ANSI.PINK),
+        ansiColor("║  EXPEDITION MAP  ·  SPRINT       ║", ANSI.YELLOW),
+        ansiColor("╚══════════════════════════════════╝", ANSI.PINK),
+    ]),
 
-    danger: [
-        "```",
-        "  ╔══════════════════════════════╗",
-        "  ║  ▲  DANGER ZONE              ║",
-        "  ╚══════════════════════════════╝",
-        "```",
-    ].join("\n"),
+    danger: ansiBlock([
+        ansiColor("╔══════════════════════════════════╗", ANSI.RED),
+        ansiColor("║  !! DANGER ZONE !!               ║", ANSI.RED),
+        ansiColor("╚══════════════════════════════════╝", ANSI.RED),
+    ]),
 
-    welcome: [
-        "```",
-        "  ┌─────────────────────────────┐",
-        "  │  ✧  WELCOME ABOARD          │",
-        "  └─────────────────────────────┘",
-        "```",
-    ].join("\n"),
+    welcome: ansiBlock([
+        ansiColor("╔══════════════════════════════════╗", ANSI.GREEN),
+        ansiColor("║  WELCOME TO THE ADVENTURE!       ║", ANSI.WHITE),
+        ansiColor("╚══════════════════════════════════╝", ANSI.GREEN),
+    ]),
 
-    config: [
-        "```",
-        "  ┌─────────────────────────────┐",
-        "  │  ⚙  CONFIGURATION           │",
-        "  └─────────────────────────────┘",
-        "```",
-    ].join("\n"),
+    config: ansiBlock([
+        ansiColor("╔══════════════════════════════════╗", ANSI.CYAN),
+        ansiColor("║  MAGIC CONFIGURATION TOME        ║", ANSI.WHITE),
+        ansiColor("╚══════════════════════════════════╝", ANSI.CYAN),
+    ]),
+
+    victory: ansiBlock([
+        ansiColor("╔══════════════════════════════════╗", ANSI.GREEN),
+        ansiColor("║  EPIC VICTORY!  ·  QUEST CLEAR   ║", ANSI.YELLOW),
+        ansiColor("╚══════════════════════════════════╝", ANSI.GREEN),
+    ]),
 } as const;
 
 // ─── Formatting Utilities ─────────────────────────────
@@ -140,7 +209,18 @@ export function progressBar(current: number, total: number, length: number = 12)
 }
 
 /**
- * Section title with icon:  ◆ SECTION NAME
+ * ANSI-colored progress bar for use inside ansiBlock().
+ * Renders green filled + dim empty with real Discord colors.
+ */
+export function ansiProgressBar(current: number, total: number, length: number = 12): string {
+    if (total === 0) return `${ansiColor("░".repeat(length), ANSI.WHITE, false)} 0/0`;
+    const filled = Math.round((current / total) * length);
+    const empty = length - filled;
+    return `${ansiColor("▓".repeat(filled), ANSI.GREEN)}${ansiColor("░".repeat(empty), ANSI.WHITE, false)} ${ansiColor(`${current}/${total}`, ANSI.CYAN)}`;
+}
+
+/**
+ * Section title with icon:  ⚔️  **SECTION NAME**
  */
 export function sectionTitle(icon: string, text: string): string {
     return `${icon}  **${text}**`;
@@ -168,32 +248,39 @@ export function treeItem(text: string, isLast: boolean = false): string {
 }
 
 /**
- * Status badge:  [ ● ACTIVE ] or [ ○ ENDED ]
+ * RPG status badge:  [ 🔥 ATIVO ] or [ ⏳ INATIVO ]
  */
 export function statusBadge(label: string, active: boolean): string {
     return active
-        ? `\`[ ${ICONS.active} ${label.toUpperCase()} ]\``
-        : `\`[ ${ICONS.pending} ${label.toUpperCase()} ]\``;
+        ? `\`[ 🔥 ${label.toUpperCase()} ]\``
+        : `\`[ ⏳ ${label.toUpperCase()} ]\``;
 }
 
 /**
- * Key-value pair with aligned formatting
+ * Key-value pair with bold key
  */
 export function kvPair(key: string, value: string): string {
     return `**${key}:** ${value}`;
 }
 
 /**
- * Framed code block for emphasis (e.g., access codes)
+ * Quest scroll box — golden ANSI-colored frame for important values.
+ * Used for access codes, important announcements, etc.
+ */
+export function questBox(value: string): string {
+    const pad = value.length + 4;
+    return ansiBlock([
+        ansiColor(`  ╔${"═".repeat(pad)}╗`, ANSI.YELLOW),
+        `  ${ansiColor("║", ANSI.YELLOW)}  ${ansiColor(value, ANSI.WHITE)}  ${ansiColor("║", ANSI.YELLOW)}`,
+        ansiColor(`  ╚${"═".repeat(pad)}╝`, ANSI.YELLOW),
+    ]);
+}
+
+/**
+ * @deprecated Use questBox() instead — kept for backward compatibility
  */
 export function framedValue(value: string): string {
-    return [
-        "```",
-        `  ╔${"═".repeat(value.length + 4)}╗`,
-        `  ║  ${value}  ║`,
-        `  ╚${"═".repeat(value.length + 4)}╝`,
-        "```",
-    ].join("\n");
+    return questBox(value);
 }
 
 /**
@@ -204,70 +291,85 @@ export function codeBox(value: string): string {
 }
 
 /**
- * Build a themed embed with consistent footer
+ * Scroll-style divider for separating embed sections
+ */
+export function scrollDivider(): string {
+    return DIVIDERS.quest;
+}
+
+/**
+ * Build a themed RPG embed with consistent adventure footer.
+ * Supports optional author field for user avatars.
  */
 export function buildEmbed(options: {
     title?: string;
     description?: string;
     color?: number;
     thumbnail?: string;
+    author?: { name: string; iconURL?: string };
 }): EmbedBuilder {
     const embed = new EmbedBuilder()
         .setColor(options.color ?? COLORS.primary)
         .setTimestamp()
-        .setFooter({ text: `${ICONS.bomb} BOMB ${ICONS.dot} Project Management` });
+        .setFooter({ text: "💣 BOMB · Adventure Guild" });
 
     if (options.title) embed.setTitle(options.title);
     if (options.description) embed.setDescription(options.description);
     if (options.thumbnail) embed.setThumbnail(options.thumbnail);
+    if (options.author) {
+        embed.setAuthor({
+            name: options.author.name,
+            iconURL: options.author.iconURL,
+        });
+    }
 
     return embed;
 }
 
 /**
- * Format an error message consistently
+ * Format an error message with RPG flair
  */
 export function errorMsg(message: string): string {
-    return `${ICONS.error} ${message}`;
+    return `❌ ${message}`;
 }
 
 /**
- * Format a success message consistently
+ * Format a success message with RPG flair
  */
 export function successMsg(message: string): string {
-    return `${ICONS.success} ${message}`;
+    return `✅ ${message}`;
 }
 
 /**
- * Format an info message consistently
+ * Format an info message
  */
 export function infoMsg(message: string): string {
-    return `${ICONS.info} ${message}`;
+    return `💡 ${message}`;
 }
 
 /**
- * Format a warning message consistently
+ * Format a warning message
  */
 export function warningMsg(message: string): string {
-    return `${ICONS.warning} ${message}`;
+    return `⚠️ ${message}`;
 }
 
 /**
- * Member display in tree format with role info
+ * Member display in tree format with adventure styling
  */
 export function memberLine(mention: string, displayName: string, isLast: boolean = false): string {
-    return `${isLast ? "└─" : "├─"} ${ICONS.user} ${mention} *(${displayName})*`;
+    return `${isLast ? "└─" : "├─"} ⚔️ ${mention} *(${displayName})*`;
 }
 
 /**
- * Sprint timeline visual
+ * Sprint/Expedition timeline visual with quest markers
  */
 export function sprintTimeline(startDate: string, endDate: string, daysLeft?: number): string {
     const lines = [
-        `${ICONS.flag} ${codeBox(startDate)} ${"─".repeat(8)}► ${codeBox(endDate)}`,
+        `🚩 ${codeBox(startDate)} ${"═".repeat(8)}► ${codeBox(endDate)}`,
     ];
     if (daysLeft !== undefined) {
-        lines.push(`${" ".repeat(4)}${ICONS.timer} **${daysLeft}** day(s) remaining`);
+        lines.push(`${"    "}⏱️ **${daysLeft}** dia(s) restante(s) na expedição`);
     }
     return lines.join("\n");
 }
