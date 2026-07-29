@@ -8,11 +8,6 @@ import {
     COLORS, ICONS, HEADERS,
     buildEmbed, questBox, errorMsg
 } from "../utils/theme.js";
-
-/**
- * Generates a cryptographically secure access code.
- * Uses node:crypto randomBytes instead of Math.random() for unpredictability.
- */
 function generateAccessCode(length = 6): string {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     const bytes = randomBytes(length);

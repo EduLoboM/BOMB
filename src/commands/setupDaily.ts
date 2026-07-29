@@ -34,8 +34,6 @@ export const setupDaily: Command = {
             });
             return;
         }
-
-        // Parse period
         const periodMinutes = dateUtils.parsePeriodToMinutes(periodInput);
         if (periodMinutes === null || periodMinutes <= 0) {
             await interaction.editReply({
@@ -43,8 +41,6 @@ export const setupDaily: Command = {
             });
             return;
         }
-
-        // Validate timezone
         try {
             new Intl.DateTimeFormat("en-US", { timeZone: timezoneInput });
         } catch (e) {

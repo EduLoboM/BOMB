@@ -70,16 +70,12 @@ export const setupSprint: Command = {
 
         const latestSprintNumber = await sprintService.getLatestSprintNumber(project.id);
         const nextSprintNumber = latestSprintNumber + 1;
-
-        // Create the initial sprint
         await sprintService.createSprint(
             project.id,
             nextSprintNumber,
             startDateStr,
             endDateStr
         );
-
-        // Update project defaults for repeat and duration
         await projectService.updateProjectSprintSettings(project.id, repeatInput, daysInput);
 
         const repeatBadge = repeatInput ? statusBadge("Ativado", true) : statusBadge("Desativado", false);

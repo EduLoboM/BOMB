@@ -14,7 +14,7 @@ export const Logger = {
     error: (message: string, error?: unknown) => {
         const time = new Date().toLocaleTimeString("en-US", { hour12: false });
         console.error(`\x1b[90m[${time}]\x1b[0m \x1b[1;31m✖ FAILED\x1b[0m \x1b[90m›\x1b[0m \x1b[3m${message}\x1b[0m`);
-        
+
         if (error) {
             let errorStr = "";
             if (error instanceof Error) {
@@ -28,7 +28,7 @@ export const Logger = {
             } else {
                 errorStr = String(error);
             }
-            
+
             const lines = errorStr.split("\n");
             for (const line of lines) {
                 console.error(`\x1b[90m           \x1b[31m│\x1b[0m \x1b[90m${line}\x1b[0m`);

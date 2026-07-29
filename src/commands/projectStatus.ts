@@ -47,8 +47,6 @@ export const projectStatus: Command = {
             userService.getProjectMembers(project.id),
             sprintService.getSprints(project.id),
         ]);
-
-        // ─── Sprint Status ────────────────────────────────
         let sprintStatusText = `${ICONS.pending} Nenhuma expedição configurada`;
         let sprintColor: number = COLORS.neutral;
 
@@ -99,8 +97,6 @@ export const projectStatus: Command = {
                 }
             }
         }
-
-        // ─── Schedule Info ────────────────────────────────
         const dailyTimeText = project.daily_time ? project.daily_time.substring(0, 5) : "N/A";
         const weekdaysText = project.weekdays ? project.weekdays.toUpperCase() : "N/A";
         const dailyPeriodText = project.daily_period ? `${project.daily_period} minuto(s)` : "N/A";
@@ -109,14 +105,10 @@ export const projectStatus: Command = {
 
         const sprintRepeatText = project.sprint_repeat ? statusBadge("Ativado", true) : statusBadge("Desativado", false);
         const sprintDurationText = project.sprint_duration ? `${project.sprint_duration} dia(s)` : "N/A";
-
-        // ─── Members ──────────────────────────────────────
         const memberCount = members.length;
         const memberListText = members.length > 0
             ? members.map((m, i) => memberLine(`<@${m.discord_id}>`, m.display_name, i === members.length - 1)).join("\n")
             : `${ICONS.pending} Nenhum aventureiro registrado. Diga à sua equipe para entrar usando \`/join_project\`.`;
-
-        // ─── Build Embed ──────────────────────────────────
         const embed = buildEmbed({
             title: `🏰  ${project.name}  —  Painel da Guilda`,
             description: HEADERS.bomb,

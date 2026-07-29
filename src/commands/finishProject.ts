@@ -38,8 +38,6 @@ export const finishProject: Command = {
             });
             return;
         }
-
-        // Show Modal to prompt for project completion description & badge emoji
         const modal = new ModalBuilder()
             .setCustomId(`finish_project_modal_${project.id}`)
             .setTitle(`🏆 Concluir: ${project.name.substring(0, 25)}`);

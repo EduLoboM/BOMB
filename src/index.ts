@@ -19,8 +19,6 @@ client.once(Events.ClientReady, (readyClient) => {
 client.on(Events.InteractionCreate, async (interaction) => {
     await handleInteraction(interaction);
 });
-
-// ─── Graceful Shutdown ────────────────────────────────
 function shutdown() {
     Logger.info("Shutting down gracefully...");
     stopScheduler();

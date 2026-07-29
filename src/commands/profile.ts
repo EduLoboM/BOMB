@@ -27,16 +27,12 @@ export const profileCommand: Command = {
         const classChosenAtLevel = user.class_chosen_at_level ?? 1;
 
         const classDef = CLASS_REGISTRY[characterClass] || CLASS_REGISTRY["Gobbo"]!;
-
-        // Level XP math
         const currentLevelXP = gamificationService.getXPForLevel(currentLevel);
         const nextLevelXP = gamificationService.getXPForLevel(currentLevel + 1);
         const xpInCurrentLevel = currentXP - currentLevelXP;
         const xpNeededForNext = nextLevelXP - currentLevelXP;
 
         const availableEvolutions = gamificationService.getAvailableEvolutions(characterClass, currentLevel, classChosenAtLevel);
-
-        // ─── Build Character Sheet Embed ─────────────────
         const embed = buildEmbed({
             title: `${classDef.icon}  Ficha do Aventureiro  —  ${user.display_name}`,
             description: [

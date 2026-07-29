@@ -115,16 +115,10 @@ export async function handleInteraction(interaction: Interaction) {
 
             const project = await projectService.getProjectByGuild(interaction.guildId!);
             const projectName = project ? project.name : "Guilda Aventureira";
-
-            // 1. Get all members of the project before deleting
             const members = await userService.getProjectMembers(projectId);
-
-            // 2. Award badge to all participating team members!
             for (const member of members) {
                 await userService.awardBadge(member.id, projectName, description, badgeIcon);
             }
-
-            // 3. Delete the project and associated data
             await projectService.deleteProject(projectId);
 
             const embed = buildEmbed({
@@ -194,8 +188,6 @@ export async function handleInteraction(interaction: Interaction) {
             }
 
             let responseText = successMsg("Relatório de expedição enviado com sucesso! 📜");
-
-            // Gamification processing
             if (project.gamification_enabled !== false) {
                 const { gamificationService, CLASS_REGISTRY } = await import("../services/gamificationService.js");
                 const xpResult = await gamificationService.processDailySubmission(

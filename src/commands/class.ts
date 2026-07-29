@@ -57,8 +57,6 @@ export const classCommand: Command = {
             });
             return;
         }
-
-        // ─── Display Class Directory & Evolution Shrine ───
         const availableEvolutions = gamificationService.getAvailableEvolutions(currentClass, currentLevel, classChosenAtLevel);
         const currentClassDef = CLASS_REGISTRY[currentClass] || CLASS_REGISTRY["Gobbo"]!;
 
