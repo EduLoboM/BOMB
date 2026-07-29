@@ -33,17 +33,13 @@ export const dateUtils = {
     },
 
     getDateTimeInTimezone(date: Date, timezone: string) {
-        // Format to "HH:MM" in the given timezone (24h clock, force 2 digits)
+
         const timeOptions = { timeZone: timezone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" } as const;
         const timeFormatter = new Intl.DateTimeFormat("en-US", timeOptions);
         const timeStr = timeFormatter.format(date);
-
-        // Format weekday (short) in the given timezone
         const dayOptions = { timeZone: timezone, weekday: "short" } as const;
         const dayFormatter = new Intl.DateTimeFormat("en-US", dayOptions);
         const dayStr = dayFormatter.format(date).toLowerCase();
-
-        // Format date string as YYYY-MM-DD in the given timezone
         const dateOptions = { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit" } as const;
         const dateFormatter = new Intl.DateTimeFormat("en-US", dateOptions);
         const parts = dateFormatter.formatToParts(date);
@@ -80,10 +76,10 @@ export const dateUtils = {
 
     addDaysToDateString(dateStr: string, days: number): string {
         const [year, month, day] = dateStr.split("-").map(Number) as [number, number, number];
-        // Create a UTC Date at midnight
+
         const date = new Date(Date.UTC(year, month - 1, day));
         date.setUTCDate(date.getUTCDate() + days);
-        
+
         const y = date.getUTCFullYear();
         const m = String(date.getUTCMonth() + 1).padStart(2, "0");
         const d = String(date.getUTCDate()).padStart(2, "0");
@@ -93,14 +89,14 @@ export const dateUtils = {
     normalizeTimezone(input: string): string {
         if (!input) return "UTC";
         const str = input.trim();
-        // Match basic offset like -3, +5, 3
+
         const match1 = str.match(/^([+-]?)(\d{1,2})$/);
         if (match1) {
             const sign = match1[1] === "-" ? "-" : "+";
             const hours = match1[2]!.padStart(2, "0");
             return `${sign}${hours}:00`;
         }
-        // Match offset with minutes like -3:00, +5:30
+
         const match2 = str.match(/^([+-]?)(\d{1,2}):(\d{2})$/);
         if (match2) {
             const sign = match2[1] === "-" ? "-" : "+";

@@ -81,8 +81,6 @@ export const reportUtils = {
 
             const submittedUserIds = new Set(dailyMap.keys());
             const pendingMembers = members.filter(m => !submittedUserIds.has(m.discord_id));
-
-            // ─── Build the Quest Log embed ────────────────────
             const completionBar = progressBar(dailyMap.size, members.length);
 
             const embed = buildEmbed({
@@ -97,12 +95,8 @@ export const reportUtils = {
                 ].join("\n"),
                 color: COLORS.daily,
             });
-
-            // ─── Submissions Section ──────────────────────────
             if (dailyMap.size > 0) {
                 const totalEntries = dailyMap.size;
-
-                // Build all entries using the shared formatter
                 const entries: string[] = [];
                 let entryIndex = 0;
                 for (const [discordId, daily] of dailyMap.entries()) {
@@ -116,7 +110,7 @@ export const reportUtils = {
                 const fullText = entries.join("");
 
                 if (fullText.length > 1000) {
-                    // Chunk entries into multiple fields to stay under Discord's 1024 char limit
+
                     let chunk = "";
                     let count = 1;
 
@@ -150,8 +144,6 @@ export const reportUtils = {
                     value: `*⏳ Nenhum relatório enviado ainda...*`
                 });
             }
-
-            // ─── Pending Section ──────────────────────────────
             if (pendingMembers.length > 0) {
                 const pendingMentions = pendingMembers.map(m => `<@${m.discord_id}>`).join(", ");
                 embed.addFields({
@@ -164,8 +156,6 @@ export const reportUtils = {
                     value: `✅ Todos os aventureiros reportaram hoje! 🎉`
                 });
             }
-
-            // ─── Button with RPG style ────────────────────────
             const button = new ButtonBuilder()
                 .setCustomId("submit_daily_btn")
                 .setLabel("Enviar Relatório da Expedição")
@@ -173,8 +163,6 @@ export const reportUtils = {
                 .setStyle(ButtonStyle.Success);
 
             const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
-
-            // Use cache first, then fetch — avoids unnecessary API calls
             const channel = client.channels.cache.get(project.channel_id)
                 ?? await client.channels.fetch(project.channel_id);
 
@@ -255,17 +243,13 @@ export const reportUtils = {
         const weekdays = project.weekdays.split(",").map((d: string) => d.trim().toLowerCase());
 
         if (endMinutes <= 1440) {
-            // Window is entirely on the same day
+
             if (!weekdays.includes(tzInfo.weekday)) {
                 return false;
             }
             return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
         } else {
-            // Window spans across midnight
-            // If we are before the daily start time today, we might be in yesterday's window
             if (currentMinutes < startMinutes) {
-                // We are in the post-midnight window of yesterday's daily.
-                // We need to check if yesterday was a scheduled day.
                 const yesterdayDate = new Date(now);
                 yesterdayDate.setDate(yesterdayDate.getDate() - 1);
                 const yesterdayTzInfo = dateUtils.getDateTimeInTimezone(yesterdayDate, timezone);
@@ -275,7 +259,7 @@ export const reportUtils = {
                 }
                 return currentMinutes <= (endMinutes - 1440);
             } else {
-                // We are in today's window (after daily_time, before midnight)
+
                 if (!weekdays.includes(tzInfo.weekday)) {
                     return false;
                 }
