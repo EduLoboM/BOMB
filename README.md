@@ -2,7 +2,7 @@
 
 # 💣 BOMB
 
-**Automated async standups right inside your Discord server.**
+**Automated async standups & RPG gamification right inside your Discord server.**
 
 *The name is an inside joke but the results are for real though.*
 
@@ -13,10 +13,10 @@
 
 ---
 
-**BOMB** automates agile daily standups for university teams, junior enterprises, and small squads.
-No more chasing teammates for updates. The bot collects, formats, and publishes everything in one clean report.
+**BOMB** automates agile daily standups for university teams, junior enterprises, and small squads with a cute RPG adventure twist.
+No more chasing teammates for updates. The bot collects, formats, and publishes everything in one clean quest log report while rewarding team consistency with XP, levels, class evolutions, and Discord roles.
 
-[Getting Started](#-getting-started) · [Commands](#-commands) · [Architecture](#-architecture) · [Roadmap](#-roadmap)
+[Getting Started](#-getting-started) · [Commands](#-commands) · [RPG Gamification](#-rpg-gamification) · [Architecture](#-architecture) · [Roadmap](#-roadmap)
 
 </div>
 
@@ -34,7 +34,7 @@ Agile ceremonies often fall apart in student and volunteer-led teams.
 - **Zero visibility:** The team operates in the dark until the day before delivery.
 - **Skipped rituals:** Traditional standups are hard to schedule and easily ignored.
 
-**BOMB replaces the friction.** By pinging your team directly inside Discord with an automated, 30-second async form, BOMB ensures that everyone stays aligned. Blockers are raised without pressure, and leaders get a consolidated report delivered right to the channel. 
+**BOMB replaces the friction.** By pinging your team directly inside Discord with an automated, 30-second async form, BOMB ensures that everyone stays aligned. Blockers are raised without pressure, leaders get a consolidated report delivered right to the channel, and team members earn XP, streaks, and RPG class evolutions for their daily contributions. 
 
 
 ---
@@ -45,7 +45,7 @@ Agile ceremonies often fall apart in student and volunteer-led teams.
 flowchart LR
     A["Register Project"] --> B["Schedule Dailies"]
     B --> C["Collect Responses"]
-    C --> D["Publish Report"]
+    C --> D["Publish Quest Log & Award XP"]
 
     style A fill:#25498a,stroke:#25498a,color:#fff
     style B fill:#0ea5e9,stroke:#0ea5e9,color:#fff
@@ -55,10 +55,10 @@ flowchart LR
 
 | Step | What happens |
 |---|---|
-| **1. Register** | Leader creates a project — members join with an invite code |
+| **1. Register** | Leader creates a project — members join with an invite code and choose an initial RPG Adventurer Class |
 | **2. Schedule** | Leader sets the days & time for automated standup reminders |
 | **3. Collect** | Bot pings the channel — members click a button and fill a quick Discord modal *(what I did / what I'll do / blockers)* |
-| **4. Publish** | Bot compiles all answers into a clean, formatted report posted to the team channel |
+| **4. Publish** | Bot compiles all answers into an ANSI-styled Quest Log, calculates XP & Streaks, applies class passives, and handles Level Ups / Class Evolutions |
 
 ---
 
@@ -93,7 +93,8 @@ SUPABASE_KEY=your_service_key
 ```
 
 ```bash
-# 3. Deploy slash commands & run
+# 3. Run database migrations, deploy slash commands & start
+npm run migration
 npm run deploy
 npm run dev
 ```
@@ -107,14 +108,40 @@ All commands use Discord's native **Slash Commands** (`/`).
 | Command | Who | Description |
 |---|---|---|
 | `/create_project [name]` | 🔑 Leader | Create a new project in the current server |
-| `/join_project [code]` | 👤 Member | Join an existing project by invite code |
-| `/project_status` | 👤 Anyone | View project config, members & sprint status (falls back to N/A if not configured) |
-| `/setup_channel [#channel]` | 🔑 Leader | Set the channel for daily reports |
-| `/setup_daily [time] [days] [period] [timezone]` | 🔑 Leader | Schedule standup reminders and set the open period (e.g. `10:00`, `mon,tue,wed`, `1h30m`). You can also provide an optional timezone offset (e.g. `-3`) or IANA name. Submissions outside this window will be blocked |
+| `/join_project [code]` | 👤 Member | Join an existing project by invite code and pick your RPG Adventurer Class |
+| `/project_status` | 👤 Anyone | View project config, members, active sprint status & guild dashboard |
+| `/setup_channel [#channel]` | 🔑 Leader | Set the channel for daily standup quest logs |
+| `/setup_daily [time] [days] [period] [timezone]` | 🔑 Leader | Schedule standup reminders and set the open period (e.g. `10:00`, `mon,tue,wed`, `1h30m`). You can also provide an optional timezone offset (e.g. `-3`) or IANA name |
 | `/setup_sprint [start] [days] [repeat]` | 🔑 Leader | Define sprint start date, duration, and toggle automatic sprint repetition when it ends |
 | `/sprint_repeat [enabled]` | 🔑 Leader | Enable or disable automatic sprint repetition at any time |
-| `/finish_project` | 🔑 Leader | Finish and permanently delete the project for this server (with confirmation prompt) |
+| `/setup_roles [auto_roles] [gamification]` | 🔑 Leader | Toggle the RPG gamification system and automatic Discord role sync for adventurer classes |
+| `/finish_project` | 🔑 Leader | Finish and permanently delete the project for this server, awarding project completion badges to all members |
 | `/daily` | 👤 Anyone | Manually open the daily modal (only works if the daily window is currently open) |
+| `/profile [user]` | 👤 Anyone | View adventurer character sheet, XP progress bar, active streak, class passives & earned badges |
+| `/leaderboard` | 👤 Anyone | View the guild leaderboard ranked by XP and daily standup streaks |
+| `/class [select]` | 👤 Anyone | View adventurer class tree, check passive abilities, and evolve your class upon leveling up |
+
+---
+
+## 🛡️ RPG Gamification System
+
+BOMB transforms daily standups into a cute medieval adventure game to boost engagement and team consistency.
+
+### Adventurer Classes & Evolutions
+
+Members start as a **Gobbo** (or choose a Tier 1 base class upon joining) and evolve into powerful advanced classes as they level up:
+
+| Class Line | Tier 1 (Base) | Tier 2 (Level 5) | Tier 3 (Level 15) | Passive Ability |
+|---|---|---|---|---|
+| **Gobbo** 🍀 | Gobbo | Angel Gobbo 🪽 | Angel 👼 | Critical Hit chance for 2.0x Double XP + Streak Shield |
+| **Spearman** 🗡️ | Spearman | Sunflower Knight 🌻 | Zombie Shieldman 🧟‍♂️ | Early Bird XP bonus for submitting standups first |
+| **Healer** 🩹 | Healer | Druid 🌿 | Moth Mage 🦋 | Bonus XP for submitting standups with zero blockers |
+| **Beast Tamer** 🐾 | Beast Tamer | Beast Huntress 🏹 | Lightbringer ✨ | Bonus XP for detailed updates & full team participation |
+| **Mooladin** 🐮 | Mooladin | — | Heretic Mooladin 😈 | Daily Streak XP multiplier boost (up to 1.6x) |
+| **Scissorpaw** ✂️ | Scissorpaw | — | Fox Musketeer 🦊 | High Critical Hit chance + Blocker Slice XP bonus |
+
+### Automatic Discord Roles
+When enabled via `/setup_roles`, BOMB automatically creates and assigns server roles matching each member's active adventurer class (e.g. `🍀 Gobbo`, `🪽 Angel Gobbo`, `👼 Angel`).
 
 ---
 
@@ -125,21 +152,26 @@ BOMB/
 ├── tests/                   # Automated unit tests (Vitest)
 │   ├── commands.test.ts
 │   ├── dateUtils.test.ts
+│   ├── gamificationService.test.ts
 │   ├── handlers.test.ts
 │   ├── reportUtils.test.ts
 │   ├── schedulers.test.ts
 │   └── services.test.ts
 ├── src/
 │   ├── commands/            # Discord slash commands definitions
+│   │   ├── class.ts
 │   │   ├── commandInterface.ts
 │   │   ├── createProject.ts
 │   │   ├── daily.ts
 │   │   ├── finishProject.ts
 │   │   ├── index.ts
 │   │   ├── joinProject.ts
+│   │   ├── leaderboard.ts
+│   │   ├── profile.ts
 │   │   ├── projectStatus.ts
 │   │   ├── setupChannel.ts
 │   │   ├── setupDaily.ts
+│   │   ├── setupRoles.ts
 │   │   ├── setupSprint.ts
 │   │   └── sprintRepeat.ts
 │   ├── handlers/            # Interaction and event handlers
@@ -148,6 +180,7 @@ BOMB/
 │   │   └── standupScheduler.ts
 │   ├── services/            # Supabase database access layer
 │   │   ├── dailyService.ts
+│   │   ├── gamificationService.ts
 │   │   ├── projectService.ts
 │   │   ├── sprintService.ts
 │   │   └── userService.ts
@@ -160,7 +193,8 @@ BOMB/
 │   ├── env.ts               # Environment variables helper
 │   ├── index.ts             # Main entrypoint and bot initializer
 │   ├── logger.ts            # Custom console logger helper
-│   ├── migration.ts         # DB Migration helper
+│   ├── migration.sql        # Database migration SQL queries
+│   ├── migration.ts         # DB Migration runner script
 │   ├── schema.sql           # Database schema SQL commands
 │   ├── supabase.ts          # Supabase client initializer
 │   └── types.ts             # Global TS types definitions
@@ -176,29 +210,38 @@ BOMB/
 | **Runtime** | Node.js + TypeScript |
 | **Discord SDK** | discord.js v14 |
 | **Database** | Supabase (PostgreSQL) |
+| **Test Runner** | Vitest |
 | **Dev Server** | tsx (watch mode) |
 
 ### Database Schema (Supabase)
 
 ```mermaid
 flowchart TD
-    P["<b>projects</b><br/>---<br/>id (uuid) PK<br/>• name (varchar)<br/>• access_code (varchar)<br/>• guild_id (varchar)<br/>• channel_id (varchar)<br/>• daily_time (time)<br/>• weekdays (varchar)<br/>• daily_period (int)<br/>• sprint_repeat (boolean)<br/>• sprint_duration (int)<br/>• timezone (varchar)"]
+    P["<b>projects</b><br/>---<br/>id (uuid) PK<br/>• name (varchar)<br/>• access_code (varchar)<br/>• guild_id (varchar)<br/>• channel_id (varchar)<br/>• daily_time (time)<br/>• weekdays (varchar)<br/>• daily_period (int)<br/>• sprint_repeat (boolean)<br/>• sprint_duration (int)<br/>• timezone (varchar)<br/>• gamification_enabled (boolean)<br/>• auto_roles (boolean)"]
     
-    U["<b>users</b><br/>---<br/>id (uuid) PK<br/>• discord_id (varchar)<br/>• project_id (uuid) FK<br/>• display_name (varchar)"]
+    U["<b>users</b><br/>---<br/>id (uuid) PK<br/>• discord_id (varchar)<br/>• display_name (varchar)<br/>• xp (int)<br/>• level (int)<br/>• streak (int)<br/>• max_streak (int)<br/>• character_class (varchar)<br/>• class_chosen_at_level (int)<br/>• last_submission_date (date)"]
+
+    PM["<b>project_members</b><br/>---<br/>id (uuid) PK<br/>• project_id (uuid) FK<br/>• user_id (uuid) FK<br/>• joined_at (timestamp)"]
     
     S["<b>sprints</b><br/>---<br/>id (uuid) PK<br/>• project_id (uuid) FK<br/>• number (int)<br/>• start_date (date)<br/>• end_date (date)"]
     
     D["<b>dailies</b><br/>---<br/>id (uuid) PK<br/>• user_id (uuid) FK<br/>• project_id (uuid) FK<br/>• done (text)<br/>• todo (text)<br/>• blockers (text)<br/>• submitted_at (timestamp)"]
 
-    P -->|has many| U
+    UB["<b>user_badges</b><br/>---<br/>id (uuid) PK<br/>• user_id (uuid) FK<br/>• project_name (varchar)<br/>• description (text)<br/>• icon (varchar)<br/>• awarded_at (timestamp)"]
+
+    P -->|has many| PM
+    U -->|belongs to many| PM
     P -->|has many| S
     P -->|tracks| D
     U -->|submits| D
+    U -->|earns| UB
 
     style P fill:#9333ea,stroke:#9333ea,color:#fff,rx:8px,ry:8px
     style U fill:#ec4899,stroke:#ec4899,color:#fff,rx:8px,ry:8px
+    style PM fill:#6366f1,stroke:#6366f1,color:#fff,rx:8px,ry:8px
     style S fill:#e11d48,stroke:#e11d48,color:#fff,rx:8px,ry:8px
     style D fill:#14b8a6,stroke:#14b8a6,color:#fff,rx:8px,ry:8px
+    style UB fill:#f59e0b,stroke:#f59e0b,color:#fff,rx:8px,ry:8px
 ```
 
 ---
@@ -211,7 +254,7 @@ flowchart TD
 - [x] Supabase integration for persistent data
 - [x] Scheduled daily reminders (cron)
 - [x] Formatted standup reports in channel
-- [ ] Gamification — Streaks, XP system, Discord role rewards
+- [x] Gamification — Streaks, XP system, RPG Class Evolutions, Discord role rewards
 - [ ] Blocker Dashboard — Visual board for impediments + auto-notify senior devs
 - [ ] Planning, Review and Retrospective Module — Planning of tasks and events, review of tasks and events and retrospectives of tasks and events.
 
