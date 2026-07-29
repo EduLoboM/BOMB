@@ -46,7 +46,7 @@ describe("Slash Commands - setup_daily", () => {
         const interaction = createMockInteraction({}, null);
         await setupDaily.execute(interaction, {} as any);
         expect(interaction.reply).toHaveBeenCalled();
-        expect(interaction.reply.mock.calls[0][0].content).toContain("only be run inside a Discord server");
+        expect(interaction.reply.mock.calls[0][0].content).toContain("servidor do Discord");
     });
 
     it("should fail on invalid time format", async () => {
@@ -54,21 +54,21 @@ describe("Slash Commands - setup_daily", () => {
         await setupDaily.execute(interaction, {} as any);
         expect(interaction.deferReply).toHaveBeenCalled();
         expect(interaction.editReply).toHaveBeenCalled();
-        expect(interaction.editReply.mock.calls[0][0].content).toContain("Invalid time format");
+        expect(interaction.editReply.mock.calls[0][0].content).toContain("Formato de horário inválido");
     });
 
     it("should fail on invalid period format", async () => {
         const interaction = createMockInteraction({ time: "10:00", days: "mon", period: "abc" });
         await setupDaily.execute(interaction, {} as any);
         expect(interaction.editReply).toHaveBeenCalled();
-        expect(interaction.editReply.mock.calls[0][0].content).toContain("Invalid period format");
+        expect(interaction.editReply.mock.calls[0][0].content).toContain("Formato de período inválido");
     });
 
     it("should fail on invalid timezone", async () => {
         const interaction = createMockInteraction({ time: "10:00", days: "mon", period: "30m", timezone: "Invalid/Zone" });
         await setupDaily.execute(interaction, {} as any);
         expect(interaction.editReply).toHaveBeenCalled();
-        expect(interaction.editReply.mock.calls[0][0].content).toContain("Invalid timezone");
+        expect(interaction.editReply.mock.calls[0][0].content).toContain("Timezone inválida");
     });
 
     it("should fail if no project exists", async () => {
@@ -77,7 +77,7 @@ describe("Slash Commands - setup_daily", () => {
 
         await setupDaily.execute(interaction, {} as any);
         expect(interaction.editReply).toHaveBeenCalled();
-        expect(interaction.editReply.mock.calls[0][0].content).toContain("No project exists for this server");
+        expect(interaction.editReply.mock.calls[0][0].content).toContain("Nenhuma guilda existe neste servidor");
     });
 
     it("should update schedule successfully", async () => {
@@ -104,14 +104,14 @@ describe("Slash Commands - setup_sprint", () => {
         const interaction = createMockInteraction({ start: "today", days: 0, repeat: true });
         await setupSprint.execute(interaction, {} as any);
         expect(interaction.editReply).toHaveBeenCalled();
-        expect(interaction.editReply.mock.calls[0][0].content).toContain("positive number of days");
+        expect(interaction.editReply.mock.calls[0][0].content).toContain("número positivo de dias");
     });
 
     it("should fail on invalid start date format", async () => {
         const interaction = createMockInteraction({ start: "invalid-date", days: 14, repeat: true });
         await setupSprint.execute(interaction, {} as any);
         expect(interaction.editReply).toHaveBeenCalled();
-        expect(interaction.editReply.mock.calls[0][0].content).toContain("Invalid start date format");
+        expect(interaction.editReply.mock.calls[0][0].content).toContain("Formato de data inválido");
     });
 
     it("should create sprint successfully for today", async () => {

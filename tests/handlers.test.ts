@@ -18,7 +18,10 @@ vi.mock("../src/services/projectService.js", () => {
 vi.mock("../src/services/userService.js", () => {
     return {
         userService: {
-            getMember: vi.fn()
+            getMember: vi.fn(),
+            getProjectMembers: vi.fn(),
+            awardBadge: vi.fn(),
+            getUserBadges: vi.fn()
         }
     };
 });
@@ -27,6 +30,7 @@ vi.mock("../src/services/dailyService.js", () => {
     return {
         dailyService: {
             getDailyForUserToday: vi.fn(),
+            getDailiesForProjectToday: vi.fn().mockResolvedValue([]),
             updateDaily: vi.fn(),
             createDaily: vi.fn()
         }
@@ -43,28 +47,34 @@ vi.mock("../src/utils/reportUtils.js", () => {
     };
 });
 
-vi.mock("../src/commands/index.js", () => {
+const { mockExecute, mockMap } = vi.hoisted(() => {
+    const mockExecute = vi.fn();
     const mockMap = new Map();
-    mockMap.set("setup_daily", { execute: vi.fn() });
+    mockMap.set("setup_daily", { execute: mockExecute });
+    return { mockExecute, mockMap };
+});
+
+vi.mock("../src/commands/index.js", () => {
     return {
         commands: mockMap
     };
 });
 
-function createMockInteraction(type: "chat" | "button" | "modal", customId = "", fields: Record<string, string> = {}, guildId: string | null = "g1") {
+function createMockInteraction(type: "chat" | "button" | "modal" | "select", customId = "", fields: Record<string, string> = {}, guildId: string | null = "g1") {
     return {
         guildId,
         user: { id: "u1", tag: "user#1234" },
         isChatInputCommand: () => type === "chat",
         isButton: () => type === "button",
         isModalSubmit: () => type === "modal",
+        isStringSelectMenu: () => type === "select",
         isRepliable: () => true,
         commandName: "setup_daily",
         customId,
-        deferReply: vi.fn(),
-        reply: vi.fn(),
-        editReply: vi.fn(),
-        deferUpdate: vi.fn(),
+        deferReply: vi.fn().mockResolvedValue(undefined),
+        reply: vi.fn().mockResolvedValue(undefined),
+        editReply: vi.fn().mockResolvedValue(undefined),
+        deferUpdate: vi.fn().mockResolvedValue(undefined),
         memberPermissions: {
             has: vi.fn().mockReturnValue(true)
         },
@@ -97,7 +107,7 @@ describe("handleInteraction - submit_daily_btn", () => {
         const interaction = createMockInteraction("button", "submit_daily_btn", {}, null);
         await handleInteraction(interaction);
         expect(interaction.reply).toHaveBeenCalled();
-        expect(interaction.reply.mock.calls[0][0].content).toContain("only be clicked inside a Discord server");
+        expect(interaction.reply.mock.calls[0][0].content).toContain("servidor do Discord");
     });
 
     it("should fail if project does not exist", async () => {
@@ -106,7 +116,7 @@ describe("handleInteraction - submit_daily_btn", () => {
 
         await handleInteraction(interaction);
         expect(interaction.reply).toHaveBeenCalled();
-        expect(interaction.reply.mock.calls[0][0].content).toContain("No project exists for this server");
+        expect(interaction.reply.mock.calls[0][0].content).toContain("Nenhuma guilda existe neste servidor");
     });
 
     it("should fail if user is not a project member", async () => {
@@ -117,7 +127,7 @@ describe("handleInteraction - submit_daily_btn", () => {
 
         await handleInteraction(interaction);
         expect(interaction.reply).toHaveBeenCalled();
-        expect(interaction.reply.mock.calls[0][0].content).toContain("You are not a member of this project");
+        expect(interaction.reply.mock.calls[0][0].content).toContain("Você não é um aventureiro desta guilda");
     });
 
     it("should fail if daily stands are closed", async () => {
@@ -130,7 +140,7 @@ describe("handleInteraction - submit_daily_btn", () => {
 
         await handleInteraction(interaction);
         expect(interaction.reply).toHaveBeenCalled();
-        expect(interaction.reply.mock.calls[0][0].content).toContain("submission period is closed");
+        expect(interaction.reply.mock.calls[0][0].content).toContain("portal de submissão está fechado");
     });
 
     it("should display modal if daily stands are open", async () => {
@@ -147,29 +157,28 @@ describe("handleInteraction - submit_daily_btn", () => {
     });
 });
 
-describe("handleInteraction - confirm_finish_project_", () => {
+describe("handleInteraction - finish_project_modal_", () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    it("should fail if admin permissions are missing", async () => {
-        const interaction = createMockInteraction("button", "confirm_finish_project_p1");
-        interaction.memberPermissions.has.mockReturnValue(false);
-
-        await handleInteraction(interaction);
-        expect(interaction.reply).toHaveBeenCalled();
-        expect(interaction.reply.mock.calls[0][0].content).toContain("Only server administrators can confirm");
-    });
-
-    it("should delete project and confirm successfully", async () => {
-        const interaction = createMockInteraction("button", "confirm_finish_project_p1");
+    it("should award badges and delete project successfully", async () => {
+        const interaction = createMockInteraction("modal", "finish_project_modal_p1", {
+            description: "Site de leaks de OnlyFans",
+            icon: "🐉"
+        });
+        vi.mocked(projectService.getProjectByGuild).mockResolvedValue({ id: "p1", name: "Dragoon", guild_id: "g1" } as any);
+        vi.mocked(userService.getProjectMembers).mockResolvedValue([
+            { id: "u1", display_name: "Alice" } as any
+        ]);
+        vi.mocked(userService.awardBadge).mockResolvedValue(undefined as any);
         vi.mocked(projectService.deleteProject).mockResolvedValue(undefined as any);
 
         await handleInteraction(interaction);
-        expect(interaction.deferUpdate).toHaveBeenCalled();
+        expect(interaction.deferReply).toHaveBeenCalled();
+        expect(userService.awardBadge).toHaveBeenCalledWith("u1", "Dragoon", "Site de leaks de OnlyFans", "🐉");
         expect(projectService.deleteProject).toHaveBeenCalledWith("p1");
         expect(interaction.editReply).toHaveBeenCalled();
-        expect(interaction.editReply.mock.calls[0][0].content).toContain("successfully deleted");
     });
 });
 
@@ -194,7 +203,7 @@ describe("handleInteraction - daily_modal", () => {
         expect(dailyService.createDaily).toHaveBeenCalledWith("m1", "p1", "done task", "todo task", "none");
         expect(reportUtils.sendOrUpdateDailyReport).toHaveBeenCalled();
         expect(interaction.editReply).toHaveBeenCalled();
-        expect(interaction.editReply.mock.calls[0][0].content).toContain("submitted successfully");
+        expect(interaction.editReply.mock.calls[0][0].content).toContain("Relatório de expedição enviado com sucesso");
     });
 
     it("should update response if already submitted today", async () => {
