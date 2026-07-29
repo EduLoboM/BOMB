@@ -30,3 +30,6 @@ jobs:
 
       - name: Run Unit Tests
         run: npm test
+        env:
+          SUPABASE_URL: https://placeholder.supabase.co
+          SUPABASE_KEY: placeholder-key
