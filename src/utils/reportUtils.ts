@@ -22,13 +22,12 @@ import type { Project, DailyWithUser } from "../types.js";
 import {
     COLORS, ICONS, DIVIDERS, HEADERS,
     progressBar, treeItem, buildEmbed,
-    sectionTitle, kvPair
+    sectionTitle, kvPair,
+    ansiBlock, ansiProgressBar
 } from "./theme.js";
 
-/**
- * Formats a single submission entry for the daily report embed.
- * Extracted to eliminate duplication between the short and chunked paths.
- */
+import { CLASS_REGISTRY } from "../services/gamificationService.js";
+
 function formatSubmissionEntry(
     discordId: string,
     daily: DailyWithUser,
@@ -36,14 +35,22 @@ function formatSubmissionEntry(
     continueChar: string,
 ): string {
     const blockerText = daily.blockers && daily.blockers.trim()
-        ? `${ICONS.blocker} ${daily.blockers}`
-        : ICONS.none;
+        ? `🚧 ${daily.blockers}`
+        : "—";
+
+    const userClass = daily.users.character_class || "Gobbo";
+    const classIcon = CLASS_REGISTRY[userClass]?.icon || "🍀";
+    const level = daily.users.level ?? 1;
+    const streak = daily.users.streak ?? 0;
+    const streakBadge = streak > 0 ? `🔥 ${streak}` : "";
+
+    const userBadge = `[${classIcon} ${userClass} Lv ${level}${streakBadge ? ` | ${streakBadge}` : ""}]`;
 
     return (
-        `${branchChar}─ ${ICONS.user} **<@${discordId}>** *(${daily.users.display_name})*\n` +
-        `${continueChar}  ${treeItem(`**Done:** ${daily.done}`)}` + "\n" +
-        `${continueChar}  ${treeItem(`**Todo:** ${daily.todo}`)}` + "\n" +
-        `${continueChar}  ${treeItem(`**Blockers:** ${blockerText}`, true)}` + "\n" +
+        `${branchChar}─ ⚔️ **<@${discordId}>** *(${daily.users.display_name})* \`${userBadge}\`\n` +
+        `${continueChar}  ${treeItem(`✅ **Feito:** ${daily.done}`)}` + "\n" +
+        `${continueChar}  ${treeItem(`📋 **A Fazer:** ${daily.todo}`)}` + "\n" +
+        `${continueChar}  ${treeItem(`🚧 **Obstáculos:** ${blockerText}`, true)}` + "\n" +
         `${continueChar}\n`
     );
 }
@@ -75,18 +82,18 @@ export const reportUtils = {
             const submittedUserIds = new Set(dailyMap.keys());
             const pendingMembers = members.filter(m => !submittedUserIds.has(m.discord_id));
 
-            // ─── Build the embed ──────────────────────────────
+            // ─── Build the Quest Log embed ────────────────────
             const completionBar = progressBar(dailyMap.size, members.length);
 
             const embed = buildEmbed({
-                title: `${ICONS.bomb}  Daily Standup  ${ICONS.none}  ${dateStr}`,
+                title: `📜  Diário da Expedição  —  ${dateStr}`,
                 description: [
                     HEADERS.daily,
                     "",
-                    `${ICONS.diamond} **Project:** ${project.name}`,
-                    `${ICONS.arrow} Use \`/daily\` or click the button below to submit.`,
+                    `🏰 **Guilda:** ${project.name}`,
+                    `${ICONS.arrow} Use \`/daily\` ou clique no botão abaixo para enviar seu relatório.`,
                     "",
-                    `\`${completionBar}\``,
+                    ansiBlock([ansiProgressBar(dailyMap.size, members.length)]),
                 ].join("\n"),
                 color: COLORS.daily,
             });
@@ -116,7 +123,7 @@ export const reportUtils = {
                     for (const entry of entries) {
                         if (chunk.length + entry.length > 1000) {
                             embed.addFields({
-                                name: `${sectionTitle(ICONS.sparkle, `Submissions (Part ${count})`)}`,
+                                name: `${sectionTitle(ICONS.sparkle, `Relatórios (Parte ${count})`)}`,
                                 value: chunk
                             });
                             chunk = entry;
@@ -127,20 +134,20 @@ export const reportUtils = {
                     }
                     if (chunk) {
                         embed.addFields({
-                            name: `${ICONS.sparkle}  Submissions (${dailyMap.size}/${members.length})`,
+                            name: `✨  Relatórios de Expedição (${dailyMap.size}/${members.length})`,
                             value: chunk
                         });
                     }
                 } else {
                     embed.addFields({
-                        name: `${ICONS.sparkle}  Submissions (${dailyMap.size}/${members.length})`,
+                        name: `✨  Relatórios de Expedição (${dailyMap.size}/${members.length})`,
                         value: fullText
                     });
                 }
             } else {
                 embed.addFields({
-                    name: `${ICONS.sparkle}  Submissions (0/${members.length})`,
-                    value: `*${ICONS.pending} No submissions yet*`
+                    name: `✨  Relatórios de Expedição (0/${members.length})`,
+                    value: `*⏳ Nenhum relatório enviado ainda...*`
                 });
             }
 
@@ -148,21 +155,22 @@ export const reportUtils = {
             if (pendingMembers.length > 0) {
                 const pendingMentions = pendingMembers.map(m => `<@${m.discord_id}>`).join(", ");
                 embed.addFields({
-                    name: `${ICONS.clock}  Pending`,
+                    name: `⏳  Aventureiros Pendentes`,
                     value: pendingMentions.length > 1020 ? pendingMentions.substring(0, 1020) + "..." : pendingMentions
                 });
             } else {
                 embed.addFields({
-                    name: `${ICONS.clock}  Pending`,
-                    value: `${ICONS.success} Everyone has submitted today!`
+                    name: `⏳  Aventureiros Pendentes`,
+                    value: `✅ Todos os aventureiros reportaram hoje! 🎉`
                 });
             }
 
-            // ─── Button ───────────────────────────────────────
+            // ─── Button with RPG style ────────────────────────
             const button = new ButtonBuilder()
                 .setCustomId("submit_daily_btn")
-                .setLabel("  Submit Daily Report")
-                .setStyle(ButtonStyle.Primary);
+                .setLabel("Enviar Relatório da Expedição")
+                .setEmoji("📜")
+                .setStyle(ButtonStyle.Success);
 
             const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
 
@@ -177,7 +185,7 @@ export const reportUtils = {
 
             const sendableChannel = channel as TextChannel | NewsChannel;
             const messages = await sendableChannel.messages.fetch({ limit: 50 });
-            const titleMatch = `${ICONS.bomb}  Daily Standup  ${ICONS.none}  ${dateStr}`;
+            const titleMatch = `📜  Diário da Expedição  —  ${dateStr}`;
             const reportMsg: Message | undefined = messages.find((m: Message) =>
                 m.author.id === client.user?.id &&
                 m.embeds.length > 0 &&
@@ -197,28 +205,28 @@ export const reportUtils = {
     async showDailyModal(interaction: ButtonInteraction | ChatInputCommandInteraction): Promise<void> {
         const modal = new ModalBuilder()
             .setCustomId("daily_modal")
-            .setTitle(`${ICONS.bomb} Daily Standup Report`);
+            .setTitle("📜 Relatório de Expedição");
 
         const doneInput = new TextInputBuilder()
             .setCustomId("done")
-            .setLabel("What did you do yesterday?")
+            .setLabel("Quais missões você completou?")
             .setStyle(TextInputStyle.Paragraph)
             .setRequired(true)
-            .setPlaceholder("e.g. Worked on database queries, styled the header...");
+            .setPlaceholder("Ex: Derrotei os bugs do banco de dados, estilizei o header...");
 
         const todoInput = new TextInputBuilder()
             .setCustomId("todo")
-            .setLabel("What will you do today?")
+            .setLabel("Quais serão suas próximas missões?")
             .setStyle(TextInputStyle.Paragraph)
             .setRequired(true)
-            .setPlaceholder("e.g. Integrate auth endpoints, write unit tests...");
+            .setPlaceholder("Ex: Integrar endpoints de auth, escrever testes...");
 
         const blockersInput = new TextInputBuilder()
             .setCustomId("blockers")
-            .setLabel("Any blockers?")
+            .setLabel("Algum obstáculo no caminho?")
             .setStyle(TextInputStyle.Paragraph)
             .setRequired(false)
-            .setPlaceholder("e.g. None / waiting on design assets...");
+            .setPlaceholder("Ex: Nenhum / Esperando assets de design do mago...");
 
         const row1 = new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(doneInput);
         const row2 = new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(todoInput);

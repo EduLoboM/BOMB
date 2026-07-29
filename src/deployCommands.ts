@@ -28,7 +28,13 @@ const commands = [
         ),
     new SlashCommandBuilder()
         .setName("project_status")
-        .setDescription("View project config, members & sprint status"),
+        .setDescription("View project config, members & sprint status")
+        .addStringOption((option) =>
+            option
+                .setName("project")
+                .setDescription("Optional project name (if this server has multiple projects)")
+                .setRequired(false)
+        ),
     new SlashCommandBuilder()
         .setName("setup_channel")
         .setDescription("Set the channel for daily reports")
@@ -103,10 +109,53 @@ const commands = [
     new SlashCommandBuilder()
         .setName("finish_project")
         .setDescription("Finish and permanently delete the project for this server")
+        .addStringOption((option) =>
+            option
+                .setName("project")
+                .setDescription("Optional project name (if this server has multiple projects)")
+                .setRequired(false)
+        )
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     new SlashCommandBuilder()
         .setName("daily")
         .setDescription("Manually open the daily modal (if you missed the alert)"),
+    new SlashCommandBuilder()
+        .setName("profile")
+        .setDescription("View your RPG Adventurer profile card or another user's profile")
+        .addUserOption((option) =>
+            option
+                .setName("user")
+                .setDescription("User to view profile for")
+                .setRequired(false)
+        ),
+    new SlashCommandBuilder()
+        .setName("leaderboard")
+        .setDescription("View the guild leaderboard ranked by XP and standup streaks"),
+    new SlashCommandBuilder()
+        .setName("class")
+        .setDescription("View class directory or choose/evolve your class")
+        .addStringOption((option) =>
+            option
+                .setName("select")
+                .setDescription("Class name to select or evolve into (e.g. Spearman, Fox Musketeer)")
+                .setRequired(false)
+        ),
+    new SlashCommandBuilder()
+        .setName("setup_roles")
+        .setDescription("Configure RPG Gamification and automatic Discord role rewards")
+        .addBooleanOption((option) =>
+            option
+                .setName("auto_roles")
+                .setDescription("Enable or disable automatic Discord role rewards for classes")
+                .setRequired(false)
+        )
+        .addBooleanOption((option) =>
+            option
+                .setName("gamification")
+                .setDescription("Enable or disable the XP and Leveling system")
+                .setRequired(false)
+        )
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 ].map((command) => command.toJSON());
 
 const rest = new REST({ version: "10" }).setToken(token);

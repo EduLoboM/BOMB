@@ -8,7 +8,7 @@ import {
     COLORS, ICONS, HEADERS, DIVIDERS,
     buildEmbed, progressBar, statusBadge,
     memberLine, sprintTimeline, kvPair, codeBox,
-    sectionTitle
+    sectionTitle, ansiBlock, ansiColor, ansiProgressBar, ANSI
 } from "../utils/theme.js";
 
 export const projectStatus: Command = {
@@ -17,7 +17,7 @@ export const projectStatus: Command = {
     async execute(interaction: ChatInputCommandInteraction) {
         if (!interaction.guildId) {
             await interaction.reply({
-                content: `${ICONS.error} This command can only be run inside a Discord server.`,
+                content: `${ICONS.error} Este comando só pode ser executado dentro de um servidor do Discord.`,
                 flags: MessageFlags.Ephemeral,
             });
             return;
@@ -25,10 +25,20 @@ export const projectStatus: Command = {
 
         await interaction.deferReply();
 
-        const project = await projectService.getProjectByGuild(interaction.guildId);
+        const projectName = interaction.options.getString("project")?.trim();
+        const project = await projectService.getProjectByGuild(interaction.guildId, projectName || undefined);
+
         if (!project) {
+            const allProjects = await projectService.getProjectsByGuild(interaction.guildId);
+            if (allProjects.length > 0) {
+                await interaction.editReply({
+                    content: `${ICONS.error} Guilda não encontrada. Guildas disponíveis neste servidor:\n` +
+                             allProjects.map(p => `• **${p.name}** (Código: \`${p.access_code}\`)`).join("\n"),
+                });
+                return;
+            }
             await interaction.editReply({
-                content: `${ICONS.error} No project has been created for this server yet. Ask a project leader to run \`/create_project\`.`,
+                content: `${ICONS.error} Nenhuma guilda foi fundada neste servidor ainda. Peça a um líder para usar \`/create_project\`.`,
             });
             return;
         }
@@ -39,7 +49,7 @@ export const projectStatus: Command = {
         ]);
 
         // ─── Sprint Status ────────────────────────────────
-        let sprintStatusText = `${ICONS.pending} No sprints configured`;
+        let sprintStatusText = `${ICONS.pending} Nenhuma expedição configurada`;
         let sprintColor: number = COLORS.neutral;
 
         if (sprints.length > 0) {
@@ -56,11 +66,11 @@ export const projectStatus: Command = {
                 const elapsed = totalDays - daysLeft;
 
                 sprintStatusText = [
-                    `${statusBadge("Active", true)}  **Sprint #${currentSprint.number}**`,
+                    `${statusBadge("Ativa", true)}  **Expedição #${currentSprint.number}**`,
                     "",
                     sprintTimeline(currentSprint.start_date, currentSprint.end_date, daysLeft),
                     "",
-                    `\`${progressBar(elapsed, totalDays)}\``,
+                    ansiBlock([ansiProgressBar(elapsed, totalDays)]),
                 ].join("\n");
                 sprintColor = COLORS.sprint;
             } else {
@@ -73,18 +83,18 @@ export const projectStatus: Command = {
                         (new Date(upcomingSprint.start_date).getTime() - new Date(todayStr).getTime()) / (1000 * 60 * 60 * 24)
                     );
                     sprintStatusText = [
-                        `${statusBadge("Upcoming", false)}  **Sprint #${upcomingSprint.number}**`,
+                        `${statusBadge("Em breve", false)}  **Expedição #${upcomingSprint.number}**`,
                         "",
                         sprintTimeline(upcomingSprint.start_date, upcomingSprint.end_date),
-                        `    ${ICONS.clock} Starts in **${daysUntil}** day(s)`,
+                        `    ${ICONS.clock} Começa em **${daysUntil}** dia(s)`,
                     ].join("\n");
                 } else {
                     const latestSprint = sprints[0]!;
                     sprintStatusText = [
-                        `${statusBadge("Ended", false)}  **Sprint #${latestSprint.number}**`,
+                        `${statusBadge("Encerrada", false)}  **Expedição #${latestSprint.number}**`,
                         "",
                         sprintTimeline(latestSprint.start_date, latestSprint.end_date),
-                        `    ${ICONS.arrow} Use \`/setup_sprint\` to start a new sprint.`,
+                        `    ${ICONS.arrow} Use \`/setup_sprint\` para iniciar uma nova expedição.`,
                     ].join("\n");
                 }
             }
@@ -93,72 +103,72 @@ export const projectStatus: Command = {
         // ─── Schedule Info ────────────────────────────────
         const dailyTimeText = project.daily_time ? project.daily_time.substring(0, 5) : "N/A";
         const weekdaysText = project.weekdays ? project.weekdays.toUpperCase() : "N/A";
-        const dailyPeriodText = project.daily_period ? `${project.daily_period} minute(s)` : "N/A";
+        const dailyPeriodText = project.daily_period ? `${project.daily_period} minuto(s)` : "N/A";
         const timezoneText = project.timezone || "UTC";
         const channelText = project.channel_id ? `<#${project.channel_id}>` : "N/A";
 
-        const sprintRepeatText = project.sprint_repeat ? statusBadge("Enabled", true) : statusBadge("Disabled", false);
-        const sprintDurationText = project.sprint_duration ? `${project.sprint_duration} day(s)` : "N/A";
+        const sprintRepeatText = project.sprint_repeat ? statusBadge("Ativado", true) : statusBadge("Desativado", false);
+        const sprintDurationText = project.sprint_duration ? `${project.sprint_duration} dia(s)` : "N/A";
 
         // ─── Members ──────────────────────────────────────
         const memberCount = members.length;
         const memberListText = members.length > 0
             ? members.map((m, i) => memberLine(`<@${m.discord_id}>`, m.display_name, i === members.length - 1)).join("\n")
-            : `${ICONS.pending} No members registered. Tell your team to join using \`/join_project\`.`;
+            : `${ICONS.pending} Nenhum aventureiro registrado. Diga à sua equipe para entrar usando \`/join_project\`.`;
 
         // ─── Build Embed ──────────────────────────────────
         const embed = buildEmbed({
-            title: `${ICONS.bomb}  ${project.name}  ${ICONS.none}  Project Dashboard`,
+            title: `🏰  ${project.name}  —  Painel da Guilda`,
             description: HEADERS.bomb,
             color: sprintColor,
         });
 
         embed.addFields(
             {
-                name: `${ICONS.key}  Access Code`,
+                name: `🗝️  Pergaminho de Acesso`,
                 value: `\`\`\`\n  ${project.access_code}\n\`\`\``,
                 inline: true
             },
             {
-                name: `${ICONS.channel}  Report Channel`,
+                name: `📡  Canal de Comunicação`,
                 value: channelText,
                 inline: true
             },
             {
                 name: "\u200B",
-                value: DIVIDERS.dotted,
+                value: DIVIDERS.quest,
                 inline: false
             },
             {
-                name: `${ICONS.clock}  Daily Schedule`,
+                name: `⏰  Ritual Diário`,
                 value: [
-                    `├─ ${kvPair("Time", codeBox(dailyTimeText))}`,
-                    `├─ ${kvPair("Days", codeBox(weekdaysText))}`,
-                    `├─ ${kvPair("Window", codeBox(dailyPeriodText))}`,
-                    `└─ ${kvPair("Timezone", codeBox(timezoneText))}`,
+                    `├─ ${kvPair("⏰ Horário", codeBox(dailyTimeText))}`,
+                    `├─ ${kvPair("📅 Dias", codeBox(weekdaysText))}`,
+                    `├─ ${kvPair("⏱️ Janela", codeBox(dailyPeriodText))}`,
+                    `└─ ${kvPair("🌍 Timezone", codeBox(timezoneText))}`,
                 ].join("\n"),
                 inline: false
             },
             {
-                name: `${ICONS.sprint}  Sprint Status`,
+                name: `🏁  Expedição Ativa`,
                 value: sprintStatusText,
                 inline: false
             },
             {
-                name: `${ICONS.repeat}  Sprint Auto-Repeat`,
+                name: `🔄  Expedição Perpétua`,
                 value: [
                     `├─ ${kvPair("Auto-Repeat", sprintRepeatText)}`,
-                    `└─ ${kvPair("Default Duration", codeBox(sprintDurationText))}`,
+                    `└─ ${kvPair("Duração Padrão", codeBox(sprintDurationText))}`,
                 ].join("\n"),
                 inline: false
             },
             {
                 name: "\u200B",
-                value: DIVIDERS.dotted,
+                value: DIVIDERS.quest,
                 inline: false
             },
             {
-                name: `${ICONS.team}  Team Members (${memberCount})`,
+                name: `🛡️  Companheiros de Guilda (${memberCount})`,
                 value: memberListText,
                 inline: false
             }

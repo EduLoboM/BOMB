@@ -6,7 +6,7 @@ import { projectService } from "../services/projectService.js";
 import { userService } from "../services/userService.js";
 import {
     COLORS, ICONS, HEADERS,
-    buildEmbed, framedValue, errorMsg
+    buildEmbed, questBox, errorMsg
 } from "../utils/theme.js";
 
 /**
@@ -25,7 +25,7 @@ export const createProject: Command = {
     async execute(interaction: ChatInputCommandInteraction) {
         if (!interaction.guildId) {
             await interaction.reply({
-                content: errorMsg("This command can only be run inside a Discord server."),
+                content: errorMsg("Este comando só pode ser executado dentro de um servidor do Discord."),
                 flags: MessageFlags.Ephemeral,
             });
             return;
@@ -38,7 +38,7 @@ export const createProject: Command = {
         const existingProject = await projectService.getProjectByGuild(interaction.guildId);
         if (existingProject) {
             await interaction.editReply({
-                content: errorMsg(`A project named **${existingProject.name}** already exists for this server! Only one project can be created per server.`),
+                content: errorMsg(`A guilda **${existingProject.name}** já existe neste servidor! Apenas uma guilda pode ser criada por servidor.`),
             });
             return;
         }
@@ -70,18 +70,18 @@ export const createProject: Command = {
         }
 
         const embed = buildEmbed({
-            title: `${ICONS.success}  Project Created`,
+            title: `🏰  Nova Guilda Fundada!`,
             description: [
                 HEADERS.welcome,
                 "",
-                `${ICONS.diamond} **${projectName}** is now live!`,
+                `${ICONS.diamond} A guilda **${projectName}** abriu suas portas para aventureiros!`,
                 "",
-                `${ICONS.arrow} Share the invite code below with your team`,
-                `${ICONS.arrow} They can join using \`/join_project\``,
+                `${ICONS.arrow} Compartilhe o pergaminho de acesso com seus companheiros`,
+                `${ICONS.arrow} Eles podem se juntar usando \`/join_project\``,
                 "",
-                framedValue(accessCode),
+                questBox(accessCode),
                 "",
-                `${ICONS.sparkle} *You have been automatically added as a member.*`,
+                `${ICONS.sparkle} *Você foi automaticamente adicionado como membro da guilda.*`,
             ].join("\n"),
             color: COLORS.success,
         });

@@ -1,10 +1,15 @@
-import { ChatInputCommandInteraction, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, MessageFlags } from "discord.js";
+import {
+    ChatInputCommandInteraction,
+    ModalBuilder,
+    TextInputBuilder,
+    TextInputStyle,
+    ActionRowBuilder,
+    ModalActionRowComponentBuilder,
+    PermissionFlagsBits
+} from "discord.js";
 import { Command } from "./commandInterface.js";
 import { projectService } from "../services/projectService.js";
-import {
-    COLORS, ICONS, HEADERS, DIVIDERS,
-    buildEmbed, errorMsg, treeItem
-} from "../utils/theme.js";
+import { ICONS, errorMsg } from "../utils/theme.js";
 
 export const finishProject: Command = {
     name: "finish_project",
@@ -12,53 +17,52 @@ export const finishProject: Command = {
     async execute(interaction: ChatInputCommandInteraction) {
         if (!interaction.guildId) {
             await interaction.reply({
-                content: errorMsg("This command can only be run inside a Discord server."),
-                flags: MessageFlags.Ephemeral,
+                content: errorMsg("Este comando só pode ser executado dentro de um servidor do Discord."),
             });
             return;
         }
 
-        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+        if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+            await interaction.reply({
+                content: errorMsg("Apenas administradores do servidor podem finalizar a expedição."),
+            });
+            return;
+        }
 
-        const project = await projectService.getProjectByGuild(interaction.guildId);
+        const projectName = interaction.options.getString("project")?.trim();
+        const project = await projectService.getProjectByGuild(interaction.guildId, projectName || undefined);
+
         if (!project) {
-            await interaction.editReply({
-                content: errorMsg("No project exists for this server. There is nothing to finish."),
+            await interaction.reply({
+                content: errorMsg("Nenhuma guilda foi encontrada para finalizar neste servidor."),
             });
             return;
         }
 
-        const embed = buildEmbed({
-            title: `${ICONS.warning}  Finish Project: ${project.name}`,
-            description: [
-                HEADERS.danger,
-                "",
-                "Are you absolutely sure you want to finish and delete this project?",
-                "",
-                `${ICONS.cross} **This action is PERMANENT and will delete:**`,
-                "",
-                treeItem(`The project **${project.name}**`),
-                treeItem("All registered team members"),
-                treeItem("All configured sprints"),
-                treeItem("All daily standup submissions", true),
-                "",
-                DIVIDERS.dotted,
-                "",
-                `${ICONS.arrow} Click the button below to confirm.`,
-            ].join("\n"),
-            color: COLORS.danger,
-        });
+        // Show Modal to prompt for project completion description & badge emoji
+        const modal = new ModalBuilder()
+            .setCustomId(`finish_project_modal_${project.id}`)
+            .setTitle(`🏆 Concluir: ${project.name.substring(0, 25)}`);
 
-        const confirmButton = new ButtonBuilder()
-            .setCustomId(`confirm_finish_project_${project.id}`)
-            .setLabel("  Confirm Finish & Delete Project")
-            .setStyle(ButtonStyle.Danger);
+        const descriptionInput = new TextInputBuilder()
+            .setCustomId("description")
+            .setLabel("Descrição épica das conquistas da guilda")
+            .setStyle(TextInputStyle.Paragraph)
+            .setRequired(true)
+            .setPlaceholder("Ex: Derrotamos o dragão do deadline! / Sistema completo...");
 
-        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(confirmButton);
+        const iconInput = new TextInputBuilder()
+            .setCustomId("icon")
+            .setLabel("Emoji/Ícone do troféu (Opcional)")
+            .setStyle(TextInputStyle.Short)
+            .setRequired(false)
+            .setPlaceholder("Ex: 💣, 🚀, 👑, 🏆 (Padrão: 🏆)");
 
-        await interaction.editReply({
-            embeds: [embed],
-            components: [row]
-        });
+        const row1 = new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(descriptionInput);
+        const row2 = new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(iconInput);
+
+        modal.addComponents(row1, row2);
+
+        await interaction.showModal(modal);
     }
 };

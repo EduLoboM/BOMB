@@ -1,4 +1,4 @@
-import { Interaction, MessageFlags } from "discord.js";
+import { Interaction, MessageFlags, GuildMember } from "discord.js";
 import { Logger } from "../logger.js";
 import { commands } from "../commands/index.js";
 import { projectService } from "../services/projectService.js";
@@ -6,7 +6,7 @@ import { userService } from "../services/userService.js";
 import { dailyService } from "../services/dailyService.js";
 import { dateUtils } from "../utils/dateUtils.js";
 import { reportUtils } from "../utils/reportUtils.js";
-import { ICONS, errorMsg, successMsg, warningMsg } from "../utils/theme.js";
+import { ICONS, COLORS, HEADERS, buildEmbed, errorMsg, successMsg, warningMsg } from "../utils/theme.js";
 
 export async function handleInteraction(interaction: Interaction) {
     try {
@@ -19,12 +19,52 @@ export async function handleInteraction(interaction: Interaction) {
             return;
         }
 
+        if (interaction.isStringSelectMenu() && interaction.customId === "class_select_menu") {
+            Logger.info(`Select Menu "class_select_menu" selected by \x1b[1m${interaction.user.tag}\x1b[0m (ID: ${interaction.user.id})`);
+
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+            const selectedClass = interaction.values[0];
+            if (!selectedClass) return;
+
+            const displayName = interaction.user.displayName || interaction.user.username;
+            const { user } = await userService.getOrCreateUser(interaction.user.id, displayName);
+
+            const { gamificationService, CLASS_REGISTRY } = await import("../services/gamificationService.js");
+            const classDef = CLASS_REGISTRY[selectedClass];
+
+            if (!classDef) {
+                await interaction.editReply({ content: errorMsg("Classe inválida.") });
+                return;
+            }
+
+            const oldClass = user.character_class;
+            await gamificationService.changeUserClass(user, selectedClass);
+
+            if (interaction.guild && interaction.member) {
+                const project = await projectService.getProjectByGuild(interaction.guildId!);
+                if (project && project.auto_roles) {
+                    await gamificationService.syncUserRole(interaction.guild, interaction.member as GuildMember, selectedClass);
+                }
+            }
+
+            const isBaseClass = classDef.tier === 1;
+            let msgText = successMsg(`Sua classe foi definida para ${classDef.icon} **${classDef.name}**!\n\n⚡ **Passiva:** ${classDef.passiveInfo}`);
+
+            if (isBaseClass && oldClass && oldClass !== selectedClass) {
+                msgText += `\n\n💡 *Ao trocar para uma classe base, você mantém seu Nível (${user.level ?? 1}) e XP, mas precisará avançar de nível a partir de agora para destravar evoluções futuras nesta nova rota!*`;
+            }
+
+            await interaction.editReply({ content: msgText });
+            return;
+        }
+
         if (interaction.isButton() && interaction.customId === "submit_daily_btn") {
             Logger.info(`Button "submit_daily_btn" clicked by \x1b[1m${interaction.user.tag}\x1b[0m (ID: ${interaction.user.id})`);
 
             if (!interaction.guildId) {
                 await interaction.reply({
-                    content: errorMsg("This button can only be clicked inside a Discord server."),
+                    content: errorMsg("Este botão só pode ser clicado dentro de um servidor do Discord."),
                     flags: MessageFlags.Ephemeral,
                 });
                 return;
@@ -33,7 +73,7 @@ export async function handleInteraction(interaction: Interaction) {
             const project = await projectService.getProjectByGuild(interaction.guildId);
             if (!project) {
                 await interaction.reply({
-                    content: errorMsg("No project exists for this server."),
+                    content: errorMsg("Nenhuma guilda existe neste servidor."),
                     flags: MessageFlags.Ephemeral,
                 });
                 return;
@@ -42,7 +82,7 @@ export async function handleInteraction(interaction: Interaction) {
             const member = await userService.getMember(interaction.user.id, project.id);
             if (!member) {
                 await interaction.reply({
-                    content: errorMsg("You are not a member of this project. Join using `/join_project` with the invite code."),
+                    content: errorMsg("Você não é um aventureiro desta guilda. Entre usando `/join_project` com o código de acesso."),
                     flags: MessageFlags.Ephemeral,
                 });
                 return;
@@ -53,7 +93,7 @@ export async function handleInteraction(interaction: Interaction) {
                 const dailyTime = project.daily_time ? project.daily_time.substring(0, 5) : "N/A";
                 const period = project.daily_period ? `${project.daily_period}m` : "N/A";
                 await interaction.reply({
-                    content: errorMsg(`The daily standup submission period is closed. It is only open for ${period} starting at ${dailyTime}.`),
+                    content: errorMsg(`O portal de submissão está fechado! ⏰ Ele só abre por ${period} a partir das ${dailyTime}.`),
                     flags: MessageFlags.Ephemeral,
                 });
                 return;
@@ -63,35 +103,46 @@ export async function handleInteraction(interaction: Interaction) {
             return;
         }
 
-        if (interaction.isButton() && interaction.customId.startsWith("confirm_finish_project_")) {
-            Logger.info(`Button "confirm_finish_project_" clicked by \x1b[1m${interaction.user.tag}\x1b[0m (ID: ${interaction.user.id})`);
+        if (interaction.isModalSubmit() && interaction.customId.startsWith("finish_project_modal_")) {
+            Logger.info(`Modal "finish_project_modal_" submitted by \x1b[1m${interaction.user.tag}\x1b[0m (ID: ${interaction.user.id})`);
 
-            if (!interaction.guildId) {
-                await interaction.reply({
-                    content: errorMsg("This button can only be clicked inside a Discord server."),
-                    flags: MessageFlags.Ephemeral,
-                });
-                return;
+            await interaction.deferReply();
+
+            const projectId = interaction.customId.replace("finish_project_modal_", "");
+            const description = interaction.fields.getTextInputValue("description").trim();
+            const rawIcon = interaction.fields.getTextInputValue("icon").trim();
+            const badgeIcon = rawIcon || "🏆";
+
+            const project = await projectService.getProjectByGuild(interaction.guildId!);
+            const projectName = project ? project.name : "Guilda Aventureira";
+
+            // 1. Get all members of the project before deleting
+            const members = await userService.getProjectMembers(projectId);
+
+            // 2. Award badge to all participating team members!
+            for (const member of members) {
+                await userService.awardBadge(member.id, projectName, description, badgeIcon);
             }
 
-            if (!interaction.memberPermissions?.has("Administrator")) {
-                await interaction.reply({
-                    content: errorMsg("Only server administrators can confirm finishing the project."),
-                    flags: MessageFlags.Ephemeral,
-                });
-                return;
-            }
-
-            await interaction.deferUpdate();
-
-            const projectId = interaction.customId.replace("confirm_finish_project_", "");
+            // 3. Delete the project and associated data
             await projectService.deleteProject(projectId);
 
-            await interaction.editReply({
-                content: successMsg("The project and all associated data (members, sprints, dailies) have been successfully deleted."),
-                embeds: [],
-                components: []
+            const embed = buildEmbed({
+                title: `🎉  Expedição Concluída com Sucesso!`,
+                description: [
+                    HEADERS.victory,
+                    "",
+                    `A guilda **${projectName}** completou sua missão épica!`,
+                    "",
+                    `🏆 **Troféu Concedido aos Aventureiros (${members.length}):**`,
+                    `${badgeIcon} **${projectName}** — *"${description}"*`,
+                    "",
+                    `${ICONS.sparkle} *Esta conquista foi gravada permanentemente no perfil (\`/profile\`) de todos os participantes!*`,
+                ].join("\n"),
+                color: COLORS.legendary,
             });
+
+            await interaction.editReply({ embeds: [embed] });
             return;
         }
 
@@ -100,7 +151,7 @@ export async function handleInteraction(interaction: Interaction) {
 
             if (!interaction.guildId) {
                 await interaction.reply({
-                    content: errorMsg("This modal can only be submitted inside a Discord server."),
+                    content: errorMsg("Este modal só pode ser enviado dentro de um servidor do Discord."),
                     flags: MessageFlags.Ephemeral,
                 });
                 return;
@@ -115,7 +166,7 @@ export async function handleInteraction(interaction: Interaction) {
             const project = await projectService.getProjectByGuild(interaction.guildId);
             if (!project) {
                 await interaction.editReply({
-                    content: errorMsg("Project not found."),
+                    content: errorMsg("Guilda não encontrada."),
                 });
                 return;
             }
@@ -123,7 +174,7 @@ export async function handleInteraction(interaction: Interaction) {
             const member = await userService.getMember(interaction.user.id, project.id);
             if (!member) {
                 await interaction.editReply({
-                    content: errorMsg("Member not found."),
+                    content: errorMsg("Aventureiro não encontrado."),
                 });
                 return;
             }
@@ -132,6 +183,9 @@ export async function handleInteraction(interaction: Interaction) {
             const { start, end } = dateUtils.getLocalDayBoundaries(todayStr);
 
             const existingDaily = await dailyService.getDailyForUserToday(member.id, project.id, start, end);
+            const todayDailies = await dailyService.getDailiesForProjectToday(project.id, start, end);
+            const isFirstSubmissionToday = todayDailies.length <= 1;
+            const hasNoBlockers = blockers.toLowerCase() === "none" || blockers.trim() === "";
 
             if (existingDaily) {
                 await dailyService.updateDaily(existingDaily.id, done, todo, blockers);
@@ -139,9 +193,43 @@ export async function handleInteraction(interaction: Interaction) {
                 await dailyService.createDaily(member.id, project.id, done, todo, blockers);
             }
 
-            let responseText = successMsg("Your daily standup has been submitted successfully!");
+            let responseText = successMsg("Relatório de expedição enviado com sucesso! 📜");
+
+            // Gamification processing
+            if (project.gamification_enabled !== false) {
+                const { gamificationService, CLASS_REGISTRY } = await import("../services/gamificationService.js");
+                const xpResult = await gamificationService.processDailySubmission(
+                    member,
+                    project,
+                    isFirstSubmissionToday,
+                    hasNoBlockers,
+                    done,
+                    todo
+                );
+
+                const currentClass = CLASS_REGISTRY[xpResult.oldClass] || { name: xpResult.oldClass, icon: "🛡️" };
+
+                responseText += `\n\n🌟 **+${xpResult.xpGained} XP Ganho!** (Base: ${xpResult.baseXP} | Streak: 🔥 ${xpResult.newStreak} dias (+${xpResult.streakBonus} XP))`;
+
+                if (xpResult.passiveNotes.length > 0) {
+                    responseText += `\n   ${xpResult.passiveNotes.join(" | ")}`;
+                }
+
+                if (xpResult.leveledUp) {
+                    responseText += `\n\n✨🎉 **LEVEL UP!** Você alcançou o **Nível ${xpResult.newLevel}**! 🎉✨`;
+                }
+
+                if (xpResult.availableEvolutions.length > 0) {
+                    responseText += `\n⚡🔮 **EVOLUÇÃO DESBLOQUEADA!** Use \`/class\` para evoluir para: ${xpResult.availableEvolutions.map(e => `**${e}**`).join(" ou ")}!`;
+                }
+
+                if (project.auto_roles && interaction.guild && interaction.member) {
+                    await gamificationService.syncUserRole(interaction.guild, interaction.member as GuildMember, member.character_class || "Gobbo");
+                }
+            }
+
             if (!project.channel_id) {
-                responseText += `\n${warningMsg("*No daily report channel has been configured for this project yet. Ask a project leader to run `/setup_channel` to enable the standup dashboard.*")}`;
+                responseText += `\n${warningMsg("*Nenhum canal de relatórios foi configurado ainda. Peça a um líder para usar `/setup_channel` para ativar o painel de expedição.*")}`;
             }
 
             await interaction.editReply({ content: responseText });
@@ -159,8 +247,8 @@ export async function handleInteraction(interaction: Interaction) {
         }
 
         const errorMessage = error && typeof error === "object" && "message" in error && typeof error.message === "string"
-            ? errorMsg(`Error: ${error.message}`)
-            : errorMsg("Error while processing this action.");
+            ? errorMsg(`Erro: ${error.message}`)
+            : errorMsg("Erro ao processar esta ação.");
 
         if (interaction.replied || interaction.deferred) {
             await interaction.editReply({ content: errorMessage }).catch(console.error);

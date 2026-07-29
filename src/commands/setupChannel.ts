@@ -12,7 +12,7 @@ export const setupChannel: Command = {
     async execute(interaction: ChatInputCommandInteraction) {
         if (!interaction.guildId) {
             await interaction.reply({
-                content: errorMsg("This command can only be run inside a Discord server."),
+                content: errorMsg("Este comando só pode ser executado dentro de um servidor do Discord."),
                 flags: MessageFlags.Ephemeral,
             });
             return;
@@ -25,7 +25,7 @@ export const setupChannel: Command = {
         const project = await projectService.getProjectByGuild(interaction.guildId);
         if (!project) {
             await interaction.editReply({
-                content: errorMsg("No project exists for this server. Please create one first using `/create_project`."),
+                content: errorMsg("Nenhuma guilda existe neste servidor. Crie uma primeiro usando `/create_project`."),
             });
             return;
         }
@@ -33,11 +33,12 @@ export const setupChannel: Command = {
         await projectService.updateProjectChannel(project.id, channel.id);
 
         const embed = buildEmbed({
-            title: `${ICONS.success}  Channel Configured`,
+            title: `📡  Canal de Comunicação Definido!`,
             description: [
-                `${ICONS.channel} Daily report channel for **${project.name}** has been set to <#${channel.id}>`,
+                `${ICONS.channel} O canal de relatórios da guilda **${project.name}** foi definido para <#${channel.id}>`,
                 "",
-                `${ICONS.arrow} Standup reports will now be posted there.`,
+                `${ICONS.arrow} Os diários de expedição serão postados lá a partir de agora.`,
+                `${ICONS.sparkle} *Que as aventuras comecem!*`,
             ].join("\n"),
             color: COLORS.success,
         });

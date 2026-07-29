@@ -8,6 +8,10 @@ import { setupSprint } from "./setupSprint.js";
 import { daily } from "./daily.js";
 import { sprintRepeat } from "./sprintRepeat.js";
 import { finishProject } from "./finishProject.js";
+import { profileCommand } from "./profile.js";
+import { leaderboardCommand } from "./leaderboard.js";
+import { classCommand } from "./class.js";
+import { setupRolesCommand } from "./setupRoles.js";
 
 export const commands = new Map<string, Command>([
     [createProject.name, createProject],
@@ -19,4 +23,8 @@ export const commands = new Map<string, Command>([
     [daily.name, daily],
     [sprintRepeat.name, sprintRepeat],
     [finishProject.name, finishProject],
+    [profileCommand.name, profileCommand],
+    [leaderboardCommand.name, leaderboardCommand],
+    [classCommand.name, classCommand],
+    [setupRolesCommand.name, setupRolesCommand],
 ]);

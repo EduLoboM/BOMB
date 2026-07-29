@@ -2,6 +2,7 @@ import { ChatInputCommandInteraction } from "discord.js";
 import { Command } from "./commandInterface.js";
 import { projectService } from "../services/projectService.js";
 import { userService } from "../services/userService.js";
+import { createClassSelectRow } from "../services/gamificationService.js";
 import {
     COLORS, ICONS, HEADERS,
     buildEmbed, errorMsg, infoMsg
@@ -18,15 +19,7 @@ export const joinProject: Command = {
         const project = await projectService.getProjectByAccessCode(accessCode);
         if (!project) {
             await interaction.editReply({
-                content: errorMsg("Project not found! Please check the invite code and try again."),
-            });
-            return;
-        }
-
-        const existingUser = await userService.getMember(interaction.user.id, project.id);
-        if (existingUser) {
-            await interaction.editReply({
-                content: infoMsg(`You are already a member of the project **${project.name}**!`),
+                content: errorMsg("Pergaminho de acesso inválido! Verifique o código de convite e tente novamente."),
             });
             return;
         }
@@ -35,23 +28,40 @@ export const joinProject: Command = {
             ? (interaction.member.displayName as string)
             : interaction.user.username;
 
-        await userService.addMember(interaction.user.id, project.id, displayName);
+        const { user } = await userService.getOrCreateUser(interaction.user.id, displayName);
+
+        const isAlreadyMember = await userService.isMemberOfProject(user.id, project.id);
+        if (isAlreadyMember) {
+            await interaction.editReply({
+                content: infoMsg(`Você já é um aventureiro da guilda **${project.name}**!`),
+            });
+            return;
+        }
+
+        await userService.addMemberToProject(user.id, project.id);
 
         const embed = buildEmbed({
-            title: `${ICONS.success}  Welcome Aboard`,
+            title: `⚔️  Novo Aventureiro na Guilda!`,
             description: [
                 HEADERS.welcome,
                 "",
-                `${ICONS.user} **${displayName}** has joined **${project.name}**`,
+                `⚔️ **${displayName}** cruzou os portões da guilda **${project.name}**!`,
                 "",
-                `${ICONS.arrow} You can now submit daily standups with \`/daily\``,
-                `${ICONS.arrow} Check project status with \`/project_status\``,
+                `${ICONS.arrow} Envie seus relatórios de expedição com \`/daily\``,
+                `${ICONS.arrow} Veja o painel da guilda com \`/project_status\``,
+                `${ICONS.arrow} Confira seu perfil de aventureiro com \`/profile\``,
                 "",
-                `${ICONS.sparkle} *Welcome to the team!*`,
+                `🛡️ **Escolha sua Classe de Aventureiro abaixo para ganhar poderes passivos!**`,
             ].join("\n"),
             color: COLORS.success,
+            author: {
+                name: `Bem-vindo à aventura, ${displayName}!`,
+                iconURL: interaction.user.displayAvatarURL(),
+            },
         });
 
-        await interaction.editReply({ embeds: [embed] });
+        const selectRow = createClassSelectRow(user);
+
+        await interaction.editReply({ embeds: [embed], components: [selectRow] });
     }
 };

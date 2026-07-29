@@ -12,7 +12,7 @@ export const sprintRepeat: Command = {
     async execute(interaction: ChatInputCommandInteraction) {
         if (!interaction.guildId) {
             await interaction.reply({
-                content: errorMsg("This command can only be run inside a Discord server."),
+                content: errorMsg("Este comando só pode ser executado dentro de um servidor do Discord."),
                 flags: MessageFlags.Ephemeral,
             });
             return;
@@ -25,32 +25,32 @@ export const sprintRepeat: Command = {
         const project = await projectService.getProjectByGuild(interaction.guildId);
         if (!project) {
             await interaction.editReply({
-                content: errorMsg("No project exists for this server. Please create one first using `/create_project`."),
+                content: errorMsg("Nenhuma guilda existe neste servidor. Crie uma primeiro usando `/create_project`."),
             });
             return;
         }
 
         if (enabled && !project.sprint_duration) {
             await interaction.editReply({
-                content: errorMsg("Cannot enable auto-repeat: No default sprint duration is set. Run `/setup_sprint` first to define a sprint and duration."),
+                content: errorMsg("Não é possível ativar auto-repeat: nenhuma duração padrão de expedição definida. Execute `/setup_sprint` primeiro."),
             });
             return;
         }
 
         await projectService.updateProjectSprintSettings(project.id, enabled, project.sprint_duration || 0);
 
-        const badge = statusBadge(enabled ? "Enabled" : "Disabled", enabled);
+        const badge = statusBadge(enabled ? "Ativado" : "Desativado", enabled);
 
         const embed = buildEmbed({
-            title: `${ICONS.repeat}  Sprint Auto-Repeat`,
+            title: `🔄  Expedição Perpétua`,
             description: [
-                `${ICONS.diamond} Auto-repeat for **${project.name}** has been updated.`,
+                `${ICONS.diamond} Auto-repeat da guilda **${project.name}** foi atualizado.`,
                 "",
                 `${ICONS.arrow} Status: ${badge}`,
                 "",
                 enabled
-                    ? `${ICONS.sparkle} *Sprints will be automatically created when the current one ends.*`
-                    : `${ICONS.info} *Sprints will no longer be created automatically.*`,
+                    ? `${ICONS.sparkle} *Novas expedições serão criadas automaticamente quando a atual terminar!*`
+                    : `💡 *Expedições não serão mais criadas automaticamente.*`,
             ].join("\n"),
             color: enabled ? COLORS.success : COLORS.neutral,
         });

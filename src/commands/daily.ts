@@ -11,7 +11,7 @@ export const daily: Command = {
     async execute(interaction: ChatInputCommandInteraction) {
         if (!interaction.guildId) {
             await interaction.reply({
-                content: errorMsg("This command can only be run inside a Discord server."),
+                content: errorMsg("Este comando só pode ser executado dentro de um servidor do Discord."),
                 flags: MessageFlags.Ephemeral,
             });
             return;
@@ -20,7 +20,7 @@ export const daily: Command = {
         const project = await projectService.getProjectByGuild(interaction.guildId);
         if (!project) {
             await interaction.reply({
-                content: errorMsg("No project exists for this server. Please create one first using `/create_project`."),
+                content: errorMsg("Nenhuma guilda existe neste servidor. Crie uma primeiro usando `/create_project`."),
                 flags: MessageFlags.Ephemeral,
             });
             return;
@@ -29,7 +29,7 @@ export const daily: Command = {
         const member = await userService.getMember(interaction.user.id, project.id);
         if (!member) {
             await interaction.reply({
-                content: errorMsg("You are not a member of this project. Join using `/join_project` with the invite code."),
+                content: errorMsg("Você não é um aventureiro desta guilda. Entre usando `/join_project` com o código de acesso."),
                 flags: MessageFlags.Ephemeral,
             });
             return;
@@ -40,7 +40,7 @@ export const daily: Command = {
             const dailyTime = project.daily_time ? project.daily_time.substring(0, 5) : "N/A";
             const period = project.daily_period ? `${project.daily_period}m` : "N/A";
             await interaction.reply({
-                content: errorMsg(`The daily standup submission period is closed. It is only open for ${period} starting at ${dailyTime}.`),
+                content: errorMsg(`O portal de submissão está fechado! ⏰ Ele só abre por ${period} a partir das ${dailyTime}.`),
                 flags: MessageFlags.Ephemeral,
             });
             return;
