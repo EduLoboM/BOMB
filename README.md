@@ -133,12 +133,12 @@ Members start as a **Gobbo** (or choose a Tier 1 base class upon joining) and ev
 
 | Class Line | Tier 1 (Base) | Tier 2 (Level 5) | Tier 3 (Level 15) | Passive Ability |
 |---|---|---|---|---|
-| **Gobbo** 🍀 | Gobbo | Angel Gobbo 🪽 | Angel 👼 | Critical Hit chance for 2.0x Double XP + Streak Shield |
-| **Spearman** 🗡️ | Spearman | Sunflower Knight 🌻 | Zombie Shieldman 🧟‍♂️ | Early Bird XP bonus for submitting standups first |
-| **Healer** 🩹 | Healer | Druid 🌿 | Moth Mage 🦋 | Bonus XP for submitting standups with zero blockers |
-| **Beast Tamer** 🐾 | Beast Tamer | Beast Huntress 🏹 | Lightbringer ✨ | Bonus XP for detailed updates & full team participation |
-| **Mooladin** 🐮 | Mooladin | — | Heretic Mooladin 😈 | Daily Streak XP multiplier boost (up to 1.6x) |
-| **Scissorpaw** ✂️ | Scissorpaw | — | Fox Musketeer 🦊 | High Critical Hit chance + Blocker Slice XP bonus |
+| **Gobbo** | Gobbo 🍀 | Angel Gobbo 🪽 | Angel 👼 | Critical Hit chance for 2.0x Double XP + Streak Shield |
+| **Spearman** | Spearman 🗡️ | Sunflower Knight 🌻 | Undead Shieldsman 🧟‍♂️ | Early Bird XP bonus for submitting standups first |
+| **Healer** | Healer 🩹 | Druid 🌿 | Moth Mage 🦋 | Bonus XP for submitting standups with zero blockers |
+| **Beast Tamer** | Beast Tamer 🐾 | Beast Huntress 🏹 | Lightbringer ✨ | Bonus XP for detailed updates & full team participation |
+| **Mooladin** | Mooladin 🐮 | Iron Mooladin ⛓️ | Heretic Mooladin 😈 | Daily Streak XP multiplier boost (up to 1.6x) + Iron Fortitude |
+| **Scissorpaw** | Scissorpaw ✂️ | Dashing Fencer 🤺 | Fox Musketeer 🦊 | High Critical Hit chance + Blocker Slice XP bonus |
 
 ### Automatic Discord Roles
 When enabled via `/setup_roles`, BOMB automatically creates and assigns server roles matching each member's active adventurer class (e.g. `🍀 Gobbo`, `🪽 Angel Gobbo`, `👼 Angel`).
