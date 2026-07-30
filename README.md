@@ -77,28 +77,28 @@ The **Guild Table** is a dynamic, persistent message pin in your project channel
 
 ```
 ┌───────────────────────────────────────────────────────────────────────────┐
-│ 🛡️ BOMB - MESA DA GUILDA | SPRINT #04 - "CAVERNA DOS BUGS"                 │
+│ 🛡️ BOMB - GUILD TABLE | SPRINT #04 - "BUG CAVE"                           │
 ├───────────────────────────────────────────────────────────────────────────┤
-│ STATUS DA EXPEDIÇÃO (SPRINT #04)                                           │
-│ [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░] 65% Coletivo                                     │
+│ EXPEDITION STATUS (SPRINT #04)                                            │
+│ [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░] 65% Collective                                  │
 │                                                                           │
-│ 👾 BOSS DE SPRINT: DRAGÃO DOS BUGS PENDENTES                               │
-│ HP: [██████████████░░░░░░░░░░░░] 1.400 / 3.000 HP                         │
+│ 👾 SPRINT BOSS: PENDING BUGS DRAGON                                      │
+│ HP: [██████████████░░░░░░░░░░░░] 1,400 / 3,000 HP                         │
 │                                                                           │
-│ 🐾 MASCOTE DA GUILDA: FUSCA TRANSFORMER (Lv. 3)                            │
-│ Aura Ativa: +25% XP em Dailies Matutinas                                  │
+│ 🐾 GUILD MASCOT: TRANSFORMER BEETLE (Lv. 3)                              │
+│ Active Aura: +25% XP on Morning Dailies                                   │
 │                                                                           │
-│ 📜 DAILIES DE HOJE (5/8 Concluídas)                                       │
-│ 🟢 @lucas  🟢 @ana  🟢 @marcos  🟡 @pedro (Pendente)  🔴 @carla (Impedida) │
+│ 📜 TODAY'S DAILIES (5/8 Completed)                                        │
+│ 🟢 @lucas  🟢 @ana  🟢 @marcos  🟡 @pedro (Pending)  🔴 @ca (Blocked)   │
 ├───────────────────────────────────────────────────────────────────────────┤
-│ [ 📜 Responder Daily ]  [ 🖐️ Mão Amiga ]  [ 🛡️ Blockers ]  [ 🧙 Ficha ]  │
+│ [ 📜 Submit Daily ]  [ 🖐️ Helping Hand ]  [ 🛡️ Blockers ] [ 🧙 Profile ]│
 ├───────────────────────────────────────────────────────────────────────────┤
-│ [ 🗺️ Selecionar Cerimônia / Atalho de Ação...                        ▼ ] │
+│ [ 🗺️ Select Ceremony / Action Shortcut...                            ▼ ] │
 └───────────────────────────────────────────────────────────────────────────┘
 ```
 
 - **Resilient Debounced Updates:** Built-in queue (`guildTableQueueService`) batches concurrent submissions to prevent Discord HTTP 429 Rate Limits.
-- **Ephemeral Responses:** Clicking `[ 🧙 Ficha & Cards ]` or checking stats returns a private response only visible to you.
+- **Ephemeral Responses:** Clicking `[ 🧙 Profile ]` or checking stats returns a private response only visible to you.
 
 ---
 
