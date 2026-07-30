@@ -12,6 +12,13 @@ import { profileCommand } from "./profile.js";
 import { leaderboardCommand } from "./leaderboard.js";
 import { classCommand } from "./class.js";
 import { setupRolesCommand } from "./setupRoles.js";
+import { blockersCommand } from "./blockers.js";
+import { hexadCommand } from "./hexad.js";
+import { setupMascotCommand } from "./setupMascot.js";
+import { planningCommand } from "./planning.js";
+import { reviewCommand } from "./review.js";
+import { retrospectiveCommand } from "./retrospective.js";
+import { setupLanguageCommand } from "./setupLanguage.js";
 
 export const commands = new Map<string, Command>([
     [createProject.name, createProject],
@@ -27,4 +34,14 @@ export const commands = new Map<string, Command>([
     [leaderboardCommand.name, leaderboardCommand],
     [classCommand.name, classCommand],
     [setupRolesCommand.name, setupRolesCommand],
+    [blockersCommand.name, blockersCommand],
+    [hexadCommand.name, hexadCommand],
+    [setupMascotCommand.name, setupMascotCommand],
+    [planningCommand.name, planningCommand],
+    [reviewCommand.name, reviewCommand],
+    [retrospectiveCommand.name, retrospectiveCommand],
+    [setupLanguageCommand.name, setupLanguageCommand],
 ]);
+
+
+

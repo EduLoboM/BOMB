@@ -1,8 +1,10 @@
 import { EmbedBuilder } from "discord.js";
 export const COLORS = {
     primary:   0x9B59B6,
+    secondary: 0x34495E,
     success:   0x2ECC71,
     danger:    0xE74C3C,
+    warning:   0xE67E22,
     sprint:    0x8E44AD,
     daily:     0x3498DB,
     neutral:   0x95A5A6,

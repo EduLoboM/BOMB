@@ -2,6 +2,7 @@ import { ChatInputCommandInteraction } from "discord.js";
 import { Command } from "./commandInterface.js";
 import { userService } from "../services/userService.js";
 import { gamificationService, CLASS_REGISTRY, createClassSelectRow } from "../services/gamificationService.js";
+import type { HexadProfile } from "../types.js";
 import {
     COLORS, ICONS, DIVIDERS,
     buildEmbed, progressBar, kvPair, codeBox,
@@ -27,6 +28,9 @@ export const profileCommand: Command = {
         const classChosenAtLevel = user.class_chosen_at_level ?? 1;
 
         const classDef = CLASS_REGISTRY[characterClass] || CLASS_REGISTRY["Gobbo"]!;
+        const hexadProfileKey = user.hexad_profile as HexadProfile | undefined | null;
+        const hexadBadge = classDef ? `\`[${classDef.hexadIcon} ${classDef.hexadTitle}]\`` : "";
+
         const currentLevelXP = gamificationService.getXPForLevel(currentLevel);
         const nextLevelXP = gamificationService.getXPForLevel(currentLevel + 1);
         const xpInCurrentLevel = currentXP - currentLevelXP;
@@ -36,7 +40,7 @@ export const profileCommand: Command = {
         const embed = buildEmbed({
             title: `${classDef.icon}  Ficha do Aventureiro  —  ${user.display_name}`,
             description: [
-                `> ${classDef.icon} **${classDef.name}** · Estágio ${classDef.tier}`,
+                `> ${classDef.icon} **${classDef.name}** · Estágio ${classDef.tier} ${hexadBadge}`,
                 `> *${classDef.description}*`,
             ].join("\n"),
             color: getClassColor(characterClass),

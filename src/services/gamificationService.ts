@@ -1,7 +1,67 @@
 import { ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, Guild, GuildMember } from "discord.js";
 import { Logger } from "../logger.js";
 import { supabase } from "../supabase.js";
-import type { User, Project } from "../types.js";
+import type { User, Project, HexadProfile } from "../types.js";
+
+export interface HexadInfo {
+    profile: HexadProfile;
+    name: string;
+    icon: string;
+    sdtDriver: string;
+    description: string;
+    recommendedClass: string;
+}
+
+export const HEXAD_REGISTRY: Record<HexadProfile, HexadInfo> = {
+    Philanthropist: {
+        profile: "Philanthropist",
+        name: "Filantropo (Mentoria & Propósito)",
+        icon: "🩺",
+        sdtDriver: "Propósito & Altruísmo",
+        description: "Motivado pelo propósito maior e por ajudar companheiros de guilda a desobstruir o caminho.",
+        recommendedClass: "Healer"
+    },
+    Socialiser: {
+        profile: "Socialiser",
+        name: "Socializador (Comunidade & Conexão)",
+        icon: "🤝",
+        sdtDriver: "Pertencimento & Relações",
+        description: "Motivado pela sinergia do time, interação social, morale e conquistas em grupo.",
+        recommendedClass: "Beast Tamer"
+    },
+    FreeSpirit: {
+        profile: "FreeSpirit",
+        name: "Espírito Livre (Autonomia & Exploração)",
+        icon: "🎨",
+        sdtDriver: "Autonomia & Autoexpressão",
+        description: "Motivado pela liberdade, personalização, descobertas de segredos e escolhas customizadas.",
+        recommendedClass: "Gobbo"
+    },
+    Achiever: {
+        profile: "Achiever",
+        name: "Realizador (Maestria & Competência)",
+        icon: "⚡",
+        sdtDriver: "Competência & Maestria",
+        description: "Motivado por superação de desafios, consistência perfeita de streak e velocidade de entrega.",
+        recommendedClass: "Spearman"
+    },
+    Player: {
+        profile: "Player",
+        name: "Jogador (Recompensas & Multiplicadores)",
+        icon: "💎",
+        sdtDriver: "Recompensas Extrínsecas",
+        description: "Motivado pelo acúmulo de XP, multiplicadores compostos de streak e loot épico.",
+        recommendedClass: "Mooladin"
+    },
+    Disruptor: {
+        profile: "Disruptor",
+        name: "Disruptor (Mudança & Inovação)",
+        icon: "⚔️",
+        sdtDriver: "Transformação & Agilidade",
+        description: "Motivado por quebrar a burocracia, fatiar bloqueios complexos e sacudir a rotina.",
+        recommendedClass: "Scissorpaw"
+    }
+};
 
 export interface ClassDefinition {
     name: string;
@@ -9,18 +69,23 @@ export interface ClassDefinition {
     tier: number;
     description: string;
     passiveInfo: string;
+    hexadProfile: HexadProfile;
+    hexadIcon: string;
+    hexadTitle: string;
     evolvesTo?: string[];
     requiredLevelForEvo?: number;
 }
 
 export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
-
     "Gobbo": {
         name: "Gobbo",
         icon: "🍀",
         tier: 1,
         description: "Tricky scavenger with unpredictable luck.",
         passiveInfo: "20% chance for a Lucky Scavenger Critical Hit (Double XP).",
+        hexadProfile: "FreeSpirit",
+        hexadIcon: "🎨",
+        hexadTitle: "Espírito Livre (Autonomia)",
         evolvesTo: ["Angel Gobbo"],
         requiredLevelForEvo: 5
     },
@@ -30,6 +95,9 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         tier: 2,
         description: "Blessed goblin illuminated by divine fortune.",
         passiveInfo: "35% chance for Critical Hit (Double XP) + 25 extra base XP.",
+        hexadProfile: "FreeSpirit",
+        hexadIcon: "🎨",
+        hexadTitle: "Espírito Livre (Autonomia)",
         evolvesTo: ["Angel"],
         requiredLevelForEvo: 15
     },
@@ -38,7 +106,10 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         icon: "👼",
         tier: 3,
         description: "Ascended celestial entity of supreme consistency.",
-        passiveInfo: "50% chance for Critical Hit (Double XP) + 50 base XP + complete streak shield protection."
+        passiveInfo: "50% chance for Critical Hit (Double XP) + 50 base XP + complete streak shield protection.",
+        hexadProfile: "FreeSpirit",
+        hexadIcon: "🎨",
+        hexadTitle: "Espírito Livre (Autonomia)"
     },
     "Spearman": {
         name: "Spearman",
@@ -46,6 +117,9 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         tier: 1,
         description: "Swift frontline soldier eager to act.",
         passiveInfo: "+50% XP bonus when you are the first member to submit the daily standup.",
+        hexadProfile: "Achiever",
+        hexadIcon: "⚡",
+        hexadTitle: "Realizador (Maestria)",
         evolvesTo: ["Sunflower Knight"],
         requiredLevelForEvo: 5
     },
@@ -55,6 +129,9 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         tier: 2,
         description: "Radiant knight spreading warmth and morale across the server.",
         passiveInfo: "+75% XP bonus when submitting first + 30 XP team morale boost.",
+        hexadProfile: "Achiever",
+        hexadIcon: "⚡",
+        hexadTitle: "Realizador (Maestria)",
         evolvesTo: ["Undead Shieldsman"],
         requiredLevelForEvo: 15
     },
@@ -63,7 +140,10 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         icon: "🧟‍♂️",
         tier: 3,
         description: "Undead guardian whose streak and speed never die.",
-        passiveInfo: "+100% XP bonus when submitting first + 50 XP undead bonus + complete streak reset immunity."
+        passiveInfo: "+100% XP bonus when submitting first + 50 XP undead bonus + complete streak reset immunity.",
+        hexadProfile: "Achiever",
+        hexadIcon: "⚡",
+        hexadTitle: "Realizador (Maestria)"
     },
     "Mooladin": {
         name: "Mooladin",
@@ -71,6 +151,9 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         tier: 1,
         description: "Sturdy bovine defender with unwavering endurance.",
         passiveInfo: "+30% bonus to daily streak XP multipliers.",
+        hexadProfile: "Player",
+        hexadIcon: "💎",
+        hexadTitle: "Jogador (Recompensas)",
         evolvesTo: ["Iron Mooladin"],
         requiredLevelForEvo: 5
     },
@@ -80,6 +163,9 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         tier: 2,
         description: "Heavy ironclad bovine guardian built like an impenetrable fortress.",
         passiveInfo: "+45% bonus to daily streak XP multipliers + 15% chance for Iron Fortitude Crit (1.5x XP).",
+        hexadProfile: "Player",
+        hexadIcon: "💎",
+        hexadTitle: "Jogador (Recompensas)",
         evolvesTo: ["Heretic Mooladin"],
         requiredLevelForEvo: 15
     },
@@ -88,7 +174,10 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         icon: "😈",
         tier: 3,
         description: "Dark bovine warrior wielding chaotic demonic power.",
-        passiveInfo: "+60% streak XP multiplier + 30% chance for Dark Chaos Crit (1.75x XP)."
+        passiveInfo: "+60% streak XP multiplier + 30% chance for Dark Chaos Crit (1.75x XP).",
+        hexadProfile: "Player",
+        hexadIcon: "💎",
+        hexadTitle: "Jogador (Recompensas)"
     },
     "Healer": {
         name: "Healer",
@@ -96,6 +185,9 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         tier: 1,
         description: "Compassionate protector keeping the squad healthy.",
         passiveInfo: "+35 XP bonus when submitting a standup with no blockers.",
+        hexadProfile: "Philanthropist",
+        hexadIcon: "🩺",
+        hexadTitle: "Filantropo (Propósito)",
         evolvesTo: ["Druid"],
         requiredLevelForEvo: 5
     },
@@ -105,6 +197,9 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         tier: 2,
         description: "Nature scholar connected to the team's growth.",
         passiveInfo: "+50 XP bonus for blocker-free standups + 20 XP for detailed reports.",
+        hexadProfile: "Philanthropist",
+        hexadIcon: "🩺",
+        hexadTitle: "Filantropo (Propósito)",
         evolvesTo: ["Moth Mage"],
         requiredLevelForEvo: 15
     },
@@ -113,7 +208,10 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         icon: "🦋",
         tier: 3,
         description: "Arcane scholar drawn to the light of progress.",
-        passiveInfo: "+75 XP for blocker-free standups + 40 XP for detailed reports + 25% total XP boost."
+        passiveInfo: "+75 XP for blocker-free standups + 40 XP for detailed reports + 25% total XP boost.",
+        hexadProfile: "Philanthropist",
+        hexadIcon: "🩺",
+        hexadTitle: "Filantropo (Propósito)"
     },
     "Beast Tamer": {
         name: "Beast Tamer",
@@ -121,6 +219,9 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         tier: 1,
         description: "Leader of team harmony and squad coordination.",
         passiveInfo: "+25 XP bonus for detailed reports + 20 XP when 100% of squad submits.",
+        hexadProfile: "Socialiser",
+        hexadIcon: "🤝",
+        hexadTitle: "Socializador (Comunidade)",
         evolvesTo: ["Beast Huntress"],
         requiredLevelForEvo: 5
     },
@@ -130,6 +231,9 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         tier: 2,
         description: "Relentless tracker hunting down project impediments.",
         passiveInfo: "+45 XP bonus for detailed reports + 35 XP when identifying blockers.",
+        hexadProfile: "Socialiser",
+        hexadIcon: "🤝",
+        hexadTitle: "Socializador (Comunidade)",
         evolvesTo: ["Lightbringer"],
         requiredLevelForEvo: 15
     },
@@ -138,7 +242,10 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         icon: "✨",
         tier: 3,
         description: "Legendary beacon illuminating the entire guild.",
-        passiveInfo: "+60 XP base bonus + 50 XP squad synergy + grants bonus aura to the team."
+        passiveInfo: "+60 XP base bonus + 50 XP squad synergy + grants bonus aura to the team.",
+        hexadProfile: "Socialiser",
+        hexadIcon: "🤝",
+        hexadTitle: "Socializador (Comunidade)"
     },
     "Scissorpaw": {
         name: "Scissorpaw",
@@ -146,6 +253,9 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         tier: 1,
         description: "Sharp-clawed adventurer that cuts through obstacles.",
         passiveInfo: "+40 XP bonus for blocker-free standups + 15% Crit chance.",
+        hexadProfile: "Disruptor",
+        hexadIcon: "⚔️",
+        hexadTitle: "Disruptor (Mudança)",
         evolvesTo: ["Dashing Fencer"],
         requiredLevelForEvo: 5
     },
@@ -155,6 +265,9 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         tier: 2,
         description: "Flashy feline fencer darting across obstacles with flair and speed.",
         passiveInfo: "+50 XP for blocker-free standups + 30% first-submission bonus + 22% Crit chance.",
+        hexadProfile: "Disruptor",
+        hexadIcon: "⚔️",
+        hexadTitle: "Disruptor (Mudança)",
         evolvesTo: ["Fox Musketeer"],
         requiredLevelForEvo: 15
     },
@@ -163,7 +276,10 @@ export const CLASS_REGISTRY: Record<string, ClassDefinition> = {
         icon: "🦊",
         tier: 3,
         description: "Ultra-fast duelist cutting deadlines with fencer precision.",
-        passiveInfo: "+60 XP for blocker-free standups + 60% first-submission bonus + 30% Crit chance."
+        passiveInfo: "+60 XP for blocker-free standups + 60% first-submission bonus + 30% Crit chance.",
+        hexadProfile: "Disruptor",
+        hexadIcon: "⚔️",
+        hexadTitle: "Disruptor (Mudança)"
     }
 };
 
@@ -183,11 +299,11 @@ export interface XPResult {
 }
 
 export const gamificationService = {
-
     getXPForLevel(level: number): number {
         if (level <= 1) return 0;
         return Math.floor(100 * Math.pow(level - 1, 1.5));
     },
+
     calculateLevelFromXP(xp: number): number {
         let level = 1;
         while (this.getXPForLevel(level + 1) <= xp) {
@@ -195,9 +311,73 @@ export const gamificationService = {
         }
         return level;
     },
+
     getDefaultClass(): string {
         return "Gobbo";
     },
+
+    calculateHexadFromAnswers(q1: string, q2: string, q3: string): HexadProfile {
+        const scores: Record<HexadProfile, number> = {
+            Philanthropist: 0,
+            Socialiser: 0,
+            FreeSpirit: 0,
+            Achiever: 0,
+            Player: 0,
+            Disruptor: 0,
+        };
+
+        const add = (p: HexadProfile, pts: number = 1) => {
+            scores[p] += pts;
+        };
+
+        if (q1 === "purpose") add("Philanthropist", 2);
+        else if (q1 === "social") add("Socialiser", 2);
+        else if (q1 === "autonomy") add("FreeSpirit", 2);
+        else if (q1 === "mastery") add("Achiever", 2);
+        else if (q1 === "rewards") add("Player", 2);
+        else if (q1 === "disrupt") add("Disruptor", 2);
+
+        if (q2 === "purpose") add("Philanthropist", 2);
+        else if (q2 === "social") add("Socialiser", 2);
+        else if (q2 === "autonomy") add("FreeSpirit", 2);
+        else if (q2 === "mastery") add("Achiever", 2);
+        else if (q2 === "rewards") add("Player", 2);
+        else if (q2 === "disrupt") add("Disruptor", 2);
+
+        if (q3 === "purpose") add("Philanthropist", 2);
+        else if (q3 === "social") add("Socialiser", 2);
+        else if (q3 === "autonomy") add("FreeSpirit", 2);
+        else if (q3 === "mastery") add("Achiever", 2);
+        else if (q3 === "rewards") add("Player", 2);
+        else if (q3 === "disrupt") add("Disruptor", 2);
+
+        let topProfile: HexadProfile = "FreeSpirit";
+        let maxScore = -1;
+
+        for (const [profile, score] of Object.entries(scores) as [HexadProfile, number][]) {
+            if (score > maxScore) {
+                maxScore = score;
+                topProfile = profile;
+            }
+        }
+
+        return topProfile;
+    },
+
+    async saveUserHexadProfile(userId: string, hexadProfile: HexadProfile): Promise<boolean> {
+        const { error } = await supabase
+            .from("users")
+            .update({ hexad_profile: hexadProfile })
+            .eq("id", userId);
+
+        if (error) {
+            Logger.error(`Failed to save hexad profile for user ${userId}:`, error);
+            return false;
+        }
+
+        return true;
+    },
+
     getAvailableEvolutions(characterClass: string, level: number, classChosenAtLevel: number = 1): string[] {
         const classDef = CLASS_REGISTRY[characterClass];
         if (!classDef || !classDef.evolvesTo || classDef.evolvesTo.length === 0) return [];
@@ -216,6 +396,7 @@ export const gamificationService = {
 
         return [];
     },
+
     async processDailySubmission(
         user: User,
         project: Project,
@@ -243,7 +424,6 @@ export const gamificationService = {
             } else if (!lastSub) {
                 newStreak = 1;
             } else {
-
                 if (["Undead Shieldsman", "Angel"].includes(currentClass) && currentStreak > 0) {
                     newStreak = currentStreak;
                     Logger.info(`Streak protected by ${currentClass} passive for user ${user.id}`);
@@ -270,6 +450,7 @@ export const gamificationService = {
             baseXP += 60;
             passiveNotes.push("✨ Lightbringer Base XP (+60 XP)");
         }
+
         let streakMultiplier = 1.0;
         if (currentClass === "Mooladin") {
             streakMultiplier = 1.3;
@@ -288,6 +469,7 @@ export const gamificationService = {
         const streakBonus = Math.min(150, Math.floor(newStreak * 10 * streakMultiplier));
         let passiveBonus = 0;
         let isCrit = false;
+
         if (isFirstSubmissionToday) {
             if (currentClass === "Spearman") {
                 passiveBonus += Math.floor((baseXP + streakBonus) * 0.5);
@@ -306,6 +488,7 @@ export const gamificationService = {
                 passiveNotes.push("🦊 Fencer Precision Speed Bonus (+60% XP)");
             }
         }
+
         if (hasNoBlockers) {
             if (currentClass === "Healer") {
                 passiveBonus += 35;
@@ -327,6 +510,7 @@ export const gamificationService = {
                 passiveNotes.push("🦊 Fencer Blocker Slice (+60 XP)");
             }
         }
+
         const updateLength = doneText.length + todoText.length;
         if (updateLength > 100) {
             if (currentClass === "Beast Tamer") {
@@ -343,6 +527,7 @@ export const gamificationService = {
                 passiveNotes.push("🦋 Arcane Report Detailed Update (+40 XP)");
             }
         }
+
         let critThreshold = 0;
         if (currentClass === "Gobbo") critThreshold = 0.20;
         else if (currentClass === "Angel Gobbo") critThreshold = 0.35;
@@ -366,10 +551,12 @@ export const gamificationService = {
         if (isCrit) {
             totalGained *= 2;
         }
+
         if (currentClass === "Iron Mooladin" && Math.random() < 0.15) {
             totalGained = Math.floor(totalGained * 1.5);
             passiveNotes.push("⛓️ Iron Fortitude Crit! (1.5x XP)");
         }
+
         if (currentClass === "Heretic Mooladin" && Math.random() < 0.30) {
             totalGained = Math.floor(totalGained * 1.75);
             passiveNotes.push("😈 Dark Chaos Crit! (1.75x XP)");
@@ -410,6 +597,7 @@ export const gamificationService = {
             passiveNotes,
         };
     },
+
     async changeUserClass(user: User, newClass: string): Promise<boolean> {
         const classDef = CLASS_REGISTRY[newClass];
         if (!classDef) {
@@ -433,6 +621,7 @@ export const gamificationService = {
         }
         return true;
     },
+
     async syncUserRole(guild: Guild, member: GuildMember, characterClass: string): Promise<void> {
         try {
             const classDef = CLASS_REGISTRY[characterClass];
@@ -465,8 +654,27 @@ export const gamificationService = {
         } catch (err) {
             Logger.warn(`Could not sync Discord role for member ${member.id}: ${String(err)}`);
         }
+    },
+
+    async addXP(userId: string, xpAmount: number): Promise<{ newXP: number; newLevel: number; leveledUp: boolean }> {
+        const { data: user } = await supabase.from("users").select("*").eq("id", userId).single();
+        if (!user) return { newXP: 0, newLevel: 1, leveledUp: false };
+
+        const currentXP = user.xp || 0;
+        const currentLevel = user.level || 1;
+        const newXP = currentXP + xpAmount;
+        const newLevel = this.calculateLevelFromXP(newXP);
+        const leveledUp = newLevel > currentLevel;
+
+        await supabase
+            .from("users")
+            .update({ xp: newXP, level: newLevel })
+            .eq("id", userId);
+
+        return { newXP, newLevel, leveledUp };
     }
 };
+
 
 export function createClassSelectRow(user: User): ActionRowBuilder<StringSelectMenuBuilder> {
     const currentClass = user.character_class || "Gobbo";
@@ -484,7 +692,7 @@ export function createClassSelectRow(user: User): ActionRowBuilder<StringSelectM
             options.push(
                 new StringSelectMenuOptionBuilder()
                     .setLabel(`⚡ EVOLUÇÃO: ${def.icon} ${def.name}`)
-                    .setDescription(def.passiveInfo.substring(0, 100))
+                    .setDescription(`[${def.hexadTitle}] ${def.passiveInfo.substring(0, 70)}`)
                     .setValue(def.name)
             );
         }
@@ -494,10 +702,12 @@ export function createClassSelectRow(user: User): ActionRowBuilder<StringSelectM
         const def = CLASS_REGISTRY[cName];
         if (def) {
             const isCurrent = cName === currentClass;
-            const desc = isCurrent ? `[Classe Atual] ${def.passiveInfo}` : `[Trocar p/ Estágio 1] ${def.passiveInfo}`;
+            const desc = isCurrent
+                ? `[Atual | ${def.hexadTitle}] ${def.passiveInfo}`
+                : `[${def.hexadTitle}] ${def.passiveInfo}`;
             options.push(
                 new StringSelectMenuOptionBuilder()
-                    .setLabel(`${def.icon} ${def.name} (Base)` + (isCurrent ? " ★" : ""))
+                    .setLabel(`${def.icon} ${def.name} (${def.hexadIcon} ${def.hexadProfile})` + (isCurrent ? " ★" : ""))
                     .setDescription(desc.substring(0, 100))
                     .setValue(def.name)
                     .setDefault(isCurrent)
@@ -512,3 +722,25 @@ export function createClassSelectRow(user: User): ActionRowBuilder<StringSelectM
 
     return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
 }
+
+export function calculateDailyXP(user: any, project: any, mascot: any, isEarlyBird: boolean) {
+  let base = 100;
+  let breakdown = 'Base 100 XP';
+
+  if (isEarlyBird) {
+    base += 25;
+    breakdown += ' + Early Bird 25 XP';
+  }
+
+  if (mascot && (mascot.type === 'Fusca Transformer' || mascot.name === 'Fusca Transformer') && isEarlyBird) {
+    const mascotBonus = 25;
+    base += mascotBonus;
+    breakdown += ' + Aura Mascote 25 XP';
+  }
+
+  return {
+    totalXp: base,
+    breakdown
+  };
+}
+

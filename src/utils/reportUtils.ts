@@ -27,12 +27,14 @@ import {
 } from "./theme.js";
 
 import { CLASS_REGISTRY } from "../services/gamificationService.js";
+import { t, Language } from "../i18n/index.js";
 
 function formatSubmissionEntry(
     discordId: string,
     daily: DailyWithUser,
     branchChar: string,
     continueChar: string,
+    lang: Language = "pt"
 ): string {
     const blockerText = daily.blockers && daily.blockers.trim()
         ? `🚧 ${daily.blockers}`
@@ -48,9 +50,9 @@ function formatSubmissionEntry(
 
     return (
         `${branchChar}─ ⚔️ **<@${discordId}>** *(${daily.users.display_name})* \`${userBadge}\`\n` +
-        `${continueChar}  ${treeItem(`✅ **Feito:** ${daily.done}`)}` + "\n" +
-        `${continueChar}  ${treeItem(`📋 **A Fazer:** ${daily.todo}`)}` + "\n" +
-        `${continueChar}  ${treeItem(`🚧 **Obstáculos:** ${blockerText}`, true)}` + "\n" +
+        `${continueChar}  ${treeItem(`✅ **${t("daily.done", lang)}:** ${daily.done}`)}` + "\n" +
+        `${continueChar}  ${treeItem(`📋 **${t("daily.todo", lang)}:** ${daily.todo}`)}` + "\n" +
+        `${continueChar}  ${treeItem(`🚧 **${t("daily.blockers", lang)}:** ${blockerText}`, true)}` + "\n" +
         `${continueChar}\n`
     );
 }
@@ -80,16 +82,17 @@ export const reportUtils = {
             }
 
             const submittedUserIds = new Set(dailyMap.keys());
+            const lang: Language = (project.language as Language) || "pt";
             const pendingMembers = members.filter(m => !submittedUserIds.has(m.discord_id));
             const completionBar = progressBar(dailyMap.size, members.length);
 
             const embed = buildEmbed({
-                title: `📜  Diário da Expedição  —  ${dateStr}`,
+                title: t("daily.journalTitle", lang, { date: dateStr }),
                 description: [
                     HEADERS.daily,
                     "",
-                    `🏰 **Guilda:** ${project.name}`,
-                    `${ICONS.arrow} Use \`/daily\` ou clique no botão abaixo para enviar seu relatório.`,
+                    `🏰 **${t("common.guild", lang)}:** ${project.name}`,
+                    `${ICONS.arrow} ${t("daily.prompt", lang)}`,
                     "",
                     ansiBlock([ansiProgressBar(dailyMap.size, members.length)]),
                 ].join("\n"),
@@ -104,13 +107,12 @@ export const reportUtils = {
                     const isLast = entryIndex === totalEntries;
                     const branchChar = isLast ? "└" : "├";
                     const continueChar = isLast ? " " : "│";
-                    entries.push(formatSubmissionEntry(discordId, daily, branchChar, continueChar));
+                    entries.push(formatSubmissionEntry(discordId, daily, branchChar, continueChar, lang));
                 }
 
                 const fullText = entries.join("");
 
                 if (fullText.length > 1000) {
-
                     let chunk = "";
                     let count = 1;
 
@@ -141,24 +143,24 @@ export const reportUtils = {
             } else {
                 embed.addFields({
                     name: `✨  Relatórios de Expedição (0/${members.length})`,
-                    value: `*⏳ Nenhum relatório enviado ainda...*`
+                    value: `*⏳ ...*`
                 });
             }
             if (pendingMembers.length > 0) {
                 const pendingMentions = pendingMembers.map(m => `<@${m.discord_id}>`).join(", ");
                 embed.addFields({
-                    name: `⏳  Aventureiros Pendentes`,
+                    name: t("daily.pendingMembers", lang, { count: pendingMembers.length }),
                     value: pendingMentions.length > 1020 ? pendingMentions.substring(0, 1020) + "..." : pendingMentions
                 });
             } else {
                 embed.addFields({
-                    name: `⏳  Aventureiros Pendentes`,
-                    value: `✅ Todos os aventureiros reportaram hoje! 🎉`
+                    name: t("daily.pendingMembers", lang, { count: 0 }),
+                    value: t("daily.allSubmitted", lang)
                 });
             }
             const button = new ButtonBuilder()
                 .setCustomId("submit_daily_btn")
-                .setLabel("Enviar Relatório da Expedição")
+                .setLabel(t("daily.submitButton", lang))
                 .setEmoji("📜")
                 .setStyle(ButtonStyle.Success);
 
@@ -173,7 +175,7 @@ export const reportUtils = {
 
             const sendableChannel = channel as TextChannel | NewsChannel;
             const messages = await sendableChannel.messages.fetch({ limit: 50 });
-            const titleMatch = `📜  Diário da Expedição  —  ${dateStr}`;
+            const titleMatch = t("daily.journalTitle", lang, { date: dateStr });
             const reportMsg: Message | undefined = messages.find((m: Message) =>
                 m.author.id === client.user?.id &&
                 m.embeds.length > 0 &&
@@ -190,31 +192,28 @@ export const reportUtils = {
         }
     },
 
-    async showDailyModal(interaction: ButtonInteraction | ChatInputCommandInteraction): Promise<void> {
+    async showDailyModal(interaction: ButtonInteraction | ChatInputCommandInteraction, lang: Language = "pt"): Promise<void> {
         const modal = new ModalBuilder()
             .setCustomId("daily_modal")
-            .setTitle("📜 Relatório de Expedição");
+            .setTitle(t("daily.modalTitle", lang));
 
         const doneInput = new TextInputBuilder()
             .setCustomId("done")
-            .setLabel("Quais missões você completou?")
+            .setLabel(t("daily.modalDoneLabel", lang))
             .setStyle(TextInputStyle.Paragraph)
-            .setRequired(true)
-            .setPlaceholder("Ex: Derrotei os bugs do banco de dados, estilizei o header...");
+            .setRequired(true);
 
         const todoInput = new TextInputBuilder()
             .setCustomId("todo")
-            .setLabel("Quais serão suas próximas missões?")
+            .setLabel(t("daily.modalTodoLabel", lang))
             .setStyle(TextInputStyle.Paragraph)
-            .setRequired(true)
-            .setPlaceholder("Ex: Integrar endpoints de auth, escrever testes...");
+            .setRequired(true);
 
         const blockersInput = new TextInputBuilder()
             .setCustomId("blockers")
-            .setLabel("Algum obstáculo no caminho?")
+            .setLabel(t("daily.modalBlockersLabel", lang))
             .setStyle(TextInputStyle.Paragraph)
-            .setRequired(false)
-            .setPlaceholder("Ex: Nenhum / Esperando assets de design do mago...");
+            .setRequired(false);
 
         const row1 = new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(doneInput);
         const row2 = new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(todoInput);
@@ -266,5 +265,78 @@ export const reportUtils = {
                 return true;
             }
         }
+    },
+
+    async sendBlockerNotification(
+        client: Client,
+        project: Project,
+        discordId: string,
+        displayName: string,
+        blockerText: string,
+        blockStreak: number,
+        impedimentId?: string
+    ): Promise<void> {
+        try {
+            if (!project.channel_id) return;
+            const channel = client.channels.cache.get(project.channel_id)
+                ?? await client.channels.fetch(project.channel_id);
+
+            if (!channel || !channel.isTextBased()) return;
+            const sendableChannel = channel as TextChannel | NewsChannel;
+
+            const isStreakAlert = blockStreak >= 2;
+
+            const title = isStreakAlert
+                ? `🚨  ALERTA DE BLOCK STREAK — GUILDA ${project.name}  🚨`
+                : `🚧  ALERTA DE OBSTÁCULO — GUILDA ${project.name}`;
+
+            const description = isStreakAlert
+                ? [
+                    `⚠️ <@${discordId}> (*${displayName}*) está em **BLOCK STREAK DE ${blockStreak} DIAS SEGUIDOS!**`,
+                    "",
+                    `🚧 **Impedimento:** *"${blockerText}"*`,
+                    "",
+                    `👑 **Líderes e Desenvolvedores:** Ofereçam suporte para desobstruir o caminho do projeto!`,
+                    ` Use \`/blockers\` para ver o painel completo ou clique nos botões abaixo.`
+                ].join("\n")
+                : [
+                    `⚔️ <@${discordId}> (*${displayName}*) relatou um novo obstáculo:`,
+                    "",
+                    `🚧 **Obstáculo:** *"${blockerText}"*`,
+                    `⚡ **Streak de Obstáculo:** ${blockStreak} dia`,
+                    "",
+                    `🤝 *Desenvolvedores e companheiros de guilda: Ofereçam suporte!*`
+                ].join("\n");
+
+            const embed = buildEmbed({
+                title,
+                description,
+                color: isStreakAlert ? COLORS.danger : COLORS.warning,
+            });
+
+            const row = new ActionRowBuilder<ButtonBuilder>();
+            if (impedimentId) {
+                row.addComponents(
+                    new ButtonBuilder()
+                        .setCustomId(`streak_help_btn_${impedimentId}`)
+                        .setLabel("Oferecer Ajuda")
+                        .setEmoji("🤝")
+                        .setStyle(ButtonStyle.Success),
+                    new ButtonBuilder()
+                        .setCustomId(`streak_resolve_btn_${impedimentId}`)
+                        .setLabel("Marcar Resolvido")
+                        .setEmoji("✅")
+                        .setStyle(ButtonStyle.Primary)
+                );
+            }
+
+            await sendableChannel.send({
+                embeds: [embed],
+                components: impedimentId ? [row] : []
+            });
+        } catch (err) {
+            Logger.error(`Failed to send blocker notification for user ${discordId}:`, err);
+        }
     }
 };
+

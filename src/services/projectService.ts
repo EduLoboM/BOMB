@@ -135,5 +135,14 @@ export const projectService = {
             .eq("id", projectId);
 
         if (error) throw error;
+    },
+
+    async updateLanguage(projectId: string, language: string): Promise<void> {
+        const { error } = await supabase
+            .from("projects")
+            .update({ language })
+            .eq("id", projectId);
+
+        if (error) throw error;
     }
 };

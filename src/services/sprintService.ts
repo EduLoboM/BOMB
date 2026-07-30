@@ -43,5 +43,11 @@ export const sprintService = {
 
         if (error) throw error;
         return data;
+    },
+
+    async getActiveSprint(projectId: string): Promise<Sprint | null> {
+        const sprints = await this.getSprints(projectId);
+        return sprints[0] || null;
     }
 };
+

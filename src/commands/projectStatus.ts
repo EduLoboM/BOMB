@@ -10,6 +10,7 @@ import {
     memberLine, sprintTimeline, kvPair, codeBox,
     sectionTitle, ansiBlock, ansiColor, ansiProgressBar, ANSI
 } from "../utils/theme.js";
+import { t, Language, SUPPORTED_LANGUAGES } from "../i18n/index.js";
 
 export const projectStatus: Command = {
     name: "project_status",
@@ -115,9 +116,12 @@ export const projectStatus: Command = {
             color: sprintColor,
         });
 
+        const lang: Language = (project.language as Language) || "pt";
+        const langInfo = SUPPORTED_LANGUAGES[lang];
+
         embed.addFields(
             {
-                name: `🗝️  Pergaminho de Acesso`,
+                name: `🗝️  ${t("project.accessCode", lang)}`,
                 value: `\`\`\`\n  ${project.access_code}\n\`\`\``,
                 inline: true
             },
@@ -137,7 +141,8 @@ export const projectStatus: Command = {
                     `├─ ${kvPair("⏰ Horário", codeBox(dailyTimeText))}`,
                     `├─ ${kvPair("📅 Dias", codeBox(weekdaysText))}`,
                     `├─ ${kvPair("⏱️ Janela", codeBox(dailyPeriodText))}`,
-                    `└─ ${kvPair("🌍 Timezone", codeBox(timezoneText))}`,
+                    `├─ ${kvPair("🌍 Timezone", codeBox(timezoneText))}`,
+                    `└─ ${kvPair("🌐 Idioma / Language", codeBox(`${langInfo.flag} ${langInfo.name}`))}`,
                 ].join("\n"),
                 inline: false
             },
