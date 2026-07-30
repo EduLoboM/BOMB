@@ -178,7 +178,7 @@ describe("gamificationService", () => {
                 mothUser,
                 dummyProject,
                 false,
-                true, // no blockers
+                true,
                 longText,
                 longText
             );
