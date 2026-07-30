@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction } from "discord.js";
 import { Command } from "./commandInterface.js";
 import { userService } from "../services/userService.js";
+import { CardService } from "../services/cardService.js";
 import { gamificationService, CLASS_REGISTRY, createClassSelectRow } from "../services/gamificationService.js";
 import type { HexadProfile } from "../types.js";
 import {
@@ -76,11 +77,33 @@ export const profileCommand: Command = {
             }
         );
 
-        const badges = await userService.getUserBadges(user.id);
+        const [badges, cards] = await Promise.all([
+            userService.getUserBadges(user.id),
+            CardService.getUserCards(user.id)
+        ]);
+
         if (badges.length > 0) {
             embed.addFields({
                 name: `🏆  Troféus da Guilda (${badges.length})`,
                 value: badges.map(b => `${b.icon || "🏆"} **${b.project_name}** — *"${b.description}"*`).join("\n"),
+                inline: false
+            });
+        }
+
+        if (cards.length > 0) {
+            const cardSummary = cards.map(c => {
+                const shinyBadge = c.is_shiny ? " ✨" : "";
+                return `🎴 **${c.card_name}** (${c.rarity}${shinyBadge})`;
+            }).slice(0, 10).join("\n");
+            embed.addFields({
+                name: `🎴  Álbum de Figurinhas Colecionáveis (${cards.length})`,
+                value: cards.length > 10 ? `${cardSummary}\n*...e mais ${cards.length - 10} card(s)*` : cardSummary,
+                inline: false
+            });
+        } else {
+            embed.addFields({
+                name: `🎴  Álbum de Figurinhas Colecionáveis (0)`,
+                value: `*Nenhuma figurinha coletada ainda. Envie suas dailies para ganhar pacotes de cards!*`,
                 inline: false
             });
         }

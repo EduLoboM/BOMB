@@ -19,7 +19,7 @@ async function deployCommands(): Promise<void> {
         { body: commands },
     );
 
-    console.log("Successfully registered 3 Slash Commands & 2 Context Menus on Discord!");
+    console.log(`Successfully registered ${commands.length} Application Commands & Context Menus on Discord!`);
 }
 
 deployCommands().catch((error: unknown) => {

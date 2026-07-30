@@ -22,8 +22,7 @@ export async function checkAndSendStandups(client: Client) {
                 continue;
             }
 
-            const weekdays = project.weekdays!.split(",").map((d: string) => d.trim().toLowerCase());
-            if (!weekdays.includes(tzInfo.weekday)) {
+            if (!dateUtils.isWeekdayMatching(project.weekdays, now, timezone)) {
                 continue;
             }
 

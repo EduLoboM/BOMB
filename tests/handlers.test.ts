@@ -79,7 +79,7 @@ describe("handleInteraction - New UX Architecture", () => {
     const interaction = createMockInteraction("chat", "bomb", "table");
     await handleInteraction(interaction);
     expect(interaction.deferReply).toHaveBeenCalledWith({ ephemeral: true });
-    expect(interaction.editReply).toHaveBeenCalledWith({ content: '✅ Mesa da Guilda atualizada e afixada neste canal com sucesso!' });
+    expect(interaction.editReply).toHaveBeenCalledWith({ content: '✅ **Mesa da Guilda** atualizada e afixada neste canal com sucesso!' });
   });
 
   it("should handle /daily command by opening daily modal", async () => {

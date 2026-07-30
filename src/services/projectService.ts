@@ -144,5 +144,14 @@ export const projectService = {
             .eq("id", projectId);
 
         if (error) throw error;
+    },
+
+    async updateProjectAccessCode(projectId: string, accessCode: string): Promise<void> {
+        const { error } = await supabase
+            .from("projects")
+            .update({ access_code: accessCode })
+            .eq("id", projectId);
+
+        if (error) throw error;
     }
 };

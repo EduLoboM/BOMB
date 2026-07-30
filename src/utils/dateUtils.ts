@@ -105,5 +105,36 @@ export const dateUtils = {
             return `${sign}${hours}:${minutes}`;
         }
         return str;
+    },
+
+    isWeekdayMatching(weekdaysInput: string | null | undefined, date: Date = new Date(), timezone: string = "UTC"): boolean {
+        if (!weekdaysInput) return true;
+
+        const tzInfo = this.getDateTimeInTimezone(date, timezone);
+        const dayStr = tzInfo.weekday; // e.g. "mon", "tue", "wed", "thu", "fri", "sat", "sun"
+
+        // Map short English day to numeric index (1 = Mon, ..., 7 = Sun)
+        const dayToNum: Record<string, number> = {
+            mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6, sun: 7
+        };
+        const dayToPt: Record<string, string> = {
+            mon: "seg", tue: "ter", wed: "qua", thu: "qui", fri: "sex", sat: "sab", sun: "dom"
+        };
+
+        const currentNum = dayToNum[dayStr] ?? 1;
+        const currentPt = dayToPt[dayStr] ?? "seg";
+
+        const tokens = weekdaysInput.split(",").map(s => s.trim().toLowerCase());
+
+        for (const token of tokens) {
+            if (token === dayStr || token === currentPt) return true;
+            const parsedNum = parseInt(token, 10);
+            if (!isNaN(parsedNum)) {
+                if (parsedNum === currentNum) return true;
+                if (parsedNum === 0 && currentNum === 7) return true; // 0 or 7 for Sunday
+            }
+        }
+
+        return false;
     }
 };
