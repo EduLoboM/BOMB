@@ -25,19 +25,22 @@ import { reviewCommand } from '../commands/review.js';
 import { retrospectiveCommand } from '../commands/retrospective.js';
 import { finishProject } from '../commands/finishProject.js';
 import { setupLanguageCommand } from '../commands/setupLanguage.js';
+import { setupSprint } from '../commands/setupSprint.js';
+import { planningService } from '../services/planningService.js';
 import { commands } from '../commands/index.js';
-import type { MascotType, Language } from '../types.js';
+import type { MascotType, Language, RetroCategory } from '../types.js';
 
 export async function handleInteraction(interaction: Interaction): Promise<void> {
   try {
     if (interaction.isChatInputCommand()) {
       let action = interaction.commandName === 'bomb' ? interaction.options.getSubcommand(false) || 'table' : interaction.commandName;
 
-      if (action === 'setup') {
+      if (action === 'setup' || action === 'setup_guild') {
         const channelSelect = new ChannelSelectMenuBuilder().setCustomId('setup_channel_select').setPlaceholder('Escolha o canal oficial da Mesa da Guilda').setChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement);
         await interaction.reply({ content: '⚙️ **Wizard de Configuração do BOMB (Passo 1/3)**\nEscolha o canal onde a **Mesa da Guilda** será mantida fixada:', components: [new ActionRowBuilder<ChannelSelectMenuBuilder>().addComponents(channelSelect)], ephemeral: true });
         return;
       }
+      if (action === 'setup_sprint') return setupSprint.execute(interaction, interaction.client);
       if (action === 'join' || action === 'join_project') return joinProject.execute(interaction, interaction.client);
       if (action === 'classe' || action === 'class') return classCommand.execute(interaction, interaction.client);
       if (action === 'daily') return showDailyModal(interaction);
@@ -95,6 +98,12 @@ export async function handleInteraction(interaction: Interaction): Promise<void>
       if (customId === 'blockers_offer_help_btn') return showOfferHelpSelectMenu(interaction);
       if (customId === 'blockers_resolve_btn') return showResolveBlockerSelectMenu(interaction);
       if (customId === 'btn_profile_cards') return showUserProfileAndCards(interaction);
+      if (customId === 'retro_add_went_well_btn' || customId === 'btn_retro_good') return showRetroAddModal(interaction, 'went_well');
+      if (customId === 'retro_add_to_improve_btn' || customId === 'btn_retro_bad') return showRetroAddModal(interaction, 'to_improve');
+      if (customId === 'retro_add_action_item_btn' || customId === 'btn_retro_idea') return showRetroAddModal(interaction, 'action_item');
+      if (customId === 'planning_add_task_btn') return showPlanningAddTaskModal(interaction);
+      if (customId === 'planning_offer_help_btn') return handlePlanningOfferHelp(interaction);
+      if (customId === 'planning_request_help_btn') return handlePlanningRequestHelp(interaction);
       if (customId.startsWith('btn_kudos_')) {
         await interaction.reply({ content: '👏 **Kudos Enviado!** Você concedeu +10 XP para o autor desta daily.', ephemeral: true });
         return;
@@ -113,7 +122,7 @@ export async function handleInteraction(interaction: Interaction): Promise<void>
       const modal = new ModalBuilder().setCustomId(`modal_setup_daily_${selectedChannelId}`).setTitle('⚙️ Configurações da Daily & Guilda (2/3)').addComponents(
         createInput('daily_time', 'Horário de Abertura da Daily (HH:MM)', '09:00', 'Ex: 09:00', true),
         createInput('timezone', 'Time Zone do Projeto', 'America/Sao_Paulo', 'Ex: America/Sao_Paulo ou UTC', true),
-        createInput('daily_period', 'Tempo Aberta (Horas)', '2', 'Ex: 2', true),
+        createInput('sprint_duration', 'Duração da Expedição/Sprint (em Dias)', '14', 'Ex: 7, 14 ou 15', true),
         createInput('weekdays', 'Dias da Semana Abertos (1=Seg ... 7=Dom)', '1,2,3,4,5', 'Ex: 1,2,3,4,5 (1=Seg, 2=Ter... 7=Dom)', true),
         createInput('access_code', 'Senha de Acesso do Projeto (opcional)', '', 'Deixe em branco para gerar automaticamente', false)
       );
@@ -134,13 +143,14 @@ export async function handleInteraction(interaction: Interaction): Promise<void>
         const lang: Language = (project.language as Language) || 'pt';
         const { sprintName, bossName } = getRandomSprintAndBoss(lang);
 
+        const sprintDuration = project.sprint_duration || 14;
         const latestSprintNum = await sprintService.getLatestSprintNumber(projectId);
         const nextSprintNum = latestSprintNum + 1;
         const today = new Date().toISOString().split('T')[0]!;
-        const endDate = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!;
+        const endDate = new Date(Date.now() + sprintDuration * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!;
 
         await sprintService.createSprint(projectId, nextSprintNum, today, endDate);
-        await projectService.updateProjectSprintSettings(projectId, true, 10);
+        await projectService.updateProjectSprintSettings(projectId, true, sprintDuration);
         guildTableQueue.enqueueUpdate(interaction.client, projectId, interaction.guildId!, project.channel_id!);
 
         const mascotDef = MASCOT_REGISTRY[selectedMascot] || MASCOT_REGISTRY['Fusca Transformer'];
@@ -217,7 +227,7 @@ export async function handleInteraction(interaction: Interaction): Promise<void>
         const channelId = interaction.customId.replace('modal_setup_daily_', '');
         const dailyTime = interaction.fields.getTextInputValue('daily_time') || '09:00';
         const timezone = interaction.fields.getTextInputValue('timezone') || 'America/Sao_Paulo';
-        const dailyPeriod = parseInt(interaction.fields.getTextInputValue('daily_period')) || 2;
+        const sprintDuration = parseInt(interaction.fields.getTextInputValue('sprint_duration')) || 14;
         const weekdays = interaction.fields.getTextInputValue('weekdays') || '1,2,3,4,5';
         const rawCode = interaction.fields.getTextInputValue('access_code');
         const accessCode = rawCode?.trim() ? rawCode.trim().toUpperCase() : Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -226,10 +236,10 @@ export async function handleInteraction(interaction: Interaction): Promise<void>
         let { data: project } = await supabase.from('projects').select('*').eq('guild_id', interaction.guildId).maybeSingle();
 
         if (!project) {
-          const { data: newP } = await supabase.from('projects').insert({ guild_id: interaction.guildId, name: interaction.guild?.name || 'Projeto Guilda', channel_id: channelId, daily_time: dailyTime, timezone, daily_period: dailyPeriod, weekdays, access_code: accessCode }).select().single();
+          const { data: newP } = await supabase.from('projects').insert({ guild_id: interaction.guildId, name: interaction.guild?.name || 'Projeto Guilda', channel_id: channelId, daily_time: dailyTime, timezone, daily_period: 2, sprint_duration: sprintDuration, weekdays, access_code: accessCode }).select().single();
           project = newP;
         } else {
-          await supabase.from('projects').update({ channel_id: channelId, daily_time: dailyTime, timezone, daily_period: dailyPeriod, weekdays, access_code: accessCode }).eq('id', project.id);
+          await supabase.from('projects').update({ channel_id: channelId, daily_time: dailyTime, timezone, daily_period: 2, sprint_duration: sprintDuration, weekdays, access_code: accessCode }).eq('id', project.id);
         }
 
         const { user } = await userService.getOrCreateUser(interaction.user.id, interaction.user.displayName || interaction.user.username);
@@ -240,6 +250,47 @@ export async function handleInteraction(interaction: Interaction): Promise<void>
         );
 
         await interaction.editReply({ content: '⚙️ **Wizard de Configuração do BOMB (Passo 3/3)**\nAgora escolha qual é a **God Beast** (Mascote) oficial do projeto:', components: [new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(mascotSelect)] });
+        return;
+      }
+
+      if (interaction.customId.startsWith('modal_retro_add_')) {
+        const category = interaction.customId.replace('modal_retro_add_', '') as RetroCategory;
+        const content = interaction.fields.getTextInputValue('retro_content').trim();
+
+        await interaction.deferReply({ ephemeral: true });
+        const project = await projectService.getProjectByGuild(interaction.guildId!);
+        if (!project) return void await interaction.editReply({ content: '❌ Nenhuma guilda encontrada neste servidor.' });
+
+        const displayName = interaction.user.displayName || interaction.user.username;
+        const { user } = await userService.getOrCreateUser(interaction.user.id, displayName);
+
+        const activeSprint = await sprintService.getActiveSprint(project.id);
+        const sprintId = activeSprint?.id;
+
+        await planningService.addRetroItem(project.id, user.id, category, content, sprintId);
+        const xpEarned = category === 'action_item' ? 25 : 15;
+
+        await interaction.editReply({ content: `✅ **Item adicionado à Retrospectiva com sucesso!** 💡\n⚡ **+${xpEarned} XP** concedidos pela sua contribuição!` });
+        return;
+      }
+
+      if (interaction.customId === 'modal_planning_add_task') {
+        await interaction.deferReply({ ephemeral: true });
+        const title = interaction.fields.getTextInputValue('task_title').trim();
+        const points = parseInt(interaction.fields.getTextInputValue('task_points')) || 1;
+        const description = interaction.fields.getTextInputValue('task_desc') || undefined;
+
+        const project = await projectService.getProjectByGuild(interaction.guildId!);
+        if (!project) return void await interaction.editReply({ content: '❌ Nenhuma guilda encontrada neste servidor.' });
+
+        const displayName = interaction.user.displayName || interaction.user.username;
+        const { user } = await userService.getOrCreateUser(interaction.user.id, displayName);
+
+        const activeSprint = await sprintService.getActiveSprint(project.id);
+        const sprintId = activeSprint?.id;
+
+        const task = await planningService.createTask(project.id, user.id, title, description, points, undefined, sprintId);
+        await interaction.editReply({ content: `📌 **Tarefa Criada com Sucesso!**\n**${task.title}** (${task.points} pts)` });
         return;
       }
 
@@ -397,8 +448,103 @@ async function startRetroThread(interaction: any) {
   }
 }
 
+async function showRetroAddModal(interaction: any, category: RetroCategory) {
+  const titles: Record<string, string> = {
+    went_well: '🟢 Retrospectiva — O que funcionou?',
+    to_improve: '🔴 Retrospectiva — O que ajustar?',
+    action_item: '💡 Retrospectiva — Nova Ação / Ideia'
+  };
+  const placeholders: Record<string, string> = {
+    went_well: 'Ex: As dailies assíncronas ajudaram o time a manter foco...',
+    to_improve: 'Ex: Precisamos organizar melhor os testes antes da entrega...',
+    action_item: 'Ex: Criar um template padrão para PRs...'
+  };
+
+  const modal = new ModalBuilder()
+    .setCustomId(`modal_retro_add_${category}`)
+    .setTitle(titles[category] || '💡 Retrospectiva da Expedição')
+    .addComponents(
+      new ActionRowBuilder<TextInputBuilder>().addComponents(
+        new TextInputBuilder()
+          .setCustomId('retro_content')
+          .setLabel('Seu feedback para a Retrospectiva')
+          .setPlaceholder(placeholders[category] || 'Escreva aqui seu ponto de vista...')
+          .setStyle(TextInputStyle.Paragraph)
+          .setRequired(true)
+      )
+    );
+
+  await interaction.showModal(modal);
+}
+
+async function showPlanningAddTaskModal(interaction: any) {
+  const modal = new ModalBuilder()
+    .setCustomId('modal_planning_add_task')
+    .setTitle('📌 Criar Nova Tarefa de Expedição')
+    .addComponents(
+      new ActionRowBuilder<TextInputBuilder>().addComponents(
+        new TextInputBuilder().setCustomId('task_title').setLabel('Título da Tarefa').setPlaceholder('Ex: Implementar autenticação via OAuth2').setStyle(TextInputStyle.Short).setRequired(true)
+      ),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(
+        new TextInputBuilder().setCustomId('task_points').setLabel('Pontos de História (1-13)').setValue('1').setPlaceholder('Ex: 1, 2, 3, 5, 8').setStyle(TextInputStyle.Short).setRequired(true)
+      ),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(
+        new TextInputBuilder().setCustomId('task_desc').setLabel('Descrição da Tarefa (Opcional)').setPlaceholder('Detalhes adicionais ou critérios de aceite...').setStyle(TextInputStyle.Paragraph).setRequired(false)
+      )
+    );
+
+  await interaction.showModal(modal);
+}
+
+async function handlePlanningOfferHelp(interaction: any) {
+  await interaction.deferReply({ ephemeral: true });
+  const project = await projectService.getProjectByGuild(interaction.guildId!);
+  if (!project) return void await interaction.editReply({ content: '❌ Nenhuma guilda encontrada neste servidor.' });
+
+  const { user } = await userService.getOrCreateUser(interaction.user.id, interaction.user.displayName || interaction.user.username);
+  await planningService.offerDiscreetHelp(project.id, user.id);
+  await interaction.editReply({ content: '🖐️ **Mão amiga estendida!** (+25 XP Prosocial concedidos). Seus companheiros podem solicitar seu suporte!' });
+}
+
+async function handlePlanningRequestHelp(interaction: any) {
+  await interaction.deferReply({ ephemeral: true });
+  const project = await projectService.getProjectByGuild(interaction.guildId!);
+  if (!project) return void await interaction.editReply({ content: '❌ Nenhuma guilda encontrada neste servidor.' });
+
+  const { user } = await userService.getOrCreateUser(interaction.user.id, interaction.user.displayName || interaction.user.username);
+  const helpers = (await planningService.getActiveHelpers(project.id)).filter(h => h.helper_id !== user.id);
+  if (!helpers.length) return void await interaction.editReply({ content: '❌ Nenhum companheiro com a mão estendida no momento.' });
+
+  const chosen = helpers[Math.floor(Math.random() * helpers.length)]!;
+  await planningService.requestDiscreetHelp(chosen.id, user.id);
+  await interaction.editReply({ content: `🤝 **Matching de Suporte Realizado!**\n<@${chosen.helper.discord_id}> (${chosen.helper.display_name}) está disponível para te ajudar!` });
+}
+
 async function showSprintReviewModal(interaction: any) {
-  await interaction.reply({ content: '📊 **Sprint Review Concluída!** Calculando o Multiplicador de Progresso da Guilda e distribuindo bônus de expedição...', ephemeral: true });
+  await interaction.deferReply({ ephemeral: true });
+  const project = await projectService.getProjectByGuild(interaction.guildId!);
+  if (!project) return void await interaction.editReply({ content: '❌ Nenhuma guilda encontrada.' });
+
+  const activeSprint = await sprintService.getActiveSprint(project.id);
+  const sprintId = activeSprint?.id, sprintNum = activeSprint ? activeSprint.number : "Geral";
+
+  const result = await planningService.concludeSprintReview(project.id, sprintId, "Revisão efetuada via Mesa da Guilda");
+  const xpLines = result.awardedUsers.length > 0
+      ? result.awardedUsers.map(u => `⭐ **${u.name}:** +${u.xp} XP acumulados`)
+      : ["*Nenhum XP de tarefa atribuído nesta revisão.*"];
+
+  const embed = new EmbedBuilder()
+      .setTitle(`🎉  Revisão de Expedição Concluída (Sprint #${sprintNum})!`)
+      .setDescription([
+          `📊 **Resumo da Revisão de Entregas & Rituais** — **${project.name}**`, "",
+          `• Tarefas Concluídas: **${result.summary.completedTasks}/${result.summary.totalTasks}** (${result.summary.taskCompletionRate}%)`,
+          `• Pontos de História: **${result.summary.completedPoints}/${result.summary.totalPoints} pts**`, "",
+          `🌟 **XP Concedido aos Aventureiros:**`, ...xpLines, "",
+          `✨ *Parabéns à guilda pelas entregas!*`
+      ].join("\n"))
+      .setColor('#F1C40F');
+
+  await interaction.editReply({ embeds: [embed] });
 }
 
 async function showLeaderboard(interaction: any) {

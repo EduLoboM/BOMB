@@ -105,9 +105,17 @@ export const userHelpContextCommand = new ContextMenuCommandBuilder()
   .setName('🖐️ Oferecer Mão Amiga')
   .setType(ApplicationCommandType.User);
 
+export const setupSprintCommandDef = new SlashCommandBuilder()
+  .setName('setup_sprint')
+  .setDescription('Inicia e configura a duração e repetição de uma nova expedição (Sprint)')
+  .addStringOption(opt => opt.setName('start').setDescription('Data de início (YYYY-MM-DD ou "today")').setRequired(true))
+  .addIntegerOption(opt => opt.setName('days').setDescription('Duração da expedição em dias').setRequired(true))
+  .addBooleanOption(opt => opt.setName('repeat').setDescription('Auto-repetir expedições automaticamente ao finalizar?').setRequired(true));
+
 export const allApplicationCommands = [
   bombCommand,
   setupCommand,
+  setupSprintCommandDef,
   joinCommand,
   classCommandDef,
   classeCommandDef,
