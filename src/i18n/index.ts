@@ -27,43 +27,21 @@ export function isValidLanguage(lang: string): lang is Language {
     return Object.keys(SUPPORTED_LANGUAGES).includes(lang);
 }
 
+const resolveKey = (obj: any, keys: string[]) => keys.reduce((acc, k) => (acc && typeof acc === "object" ? acc[k] : undefined), obj);
+
 export function t(
     keyPath: string,
     lang: Language = "pt",
     params?: Record<string, string | number>
 ): string {
-    const localeDict = LOCALES[lang] || pt;
     const keys = keyPath.split(".");
-    
-    let current: any = localeDict;
-    for (const key of keys) {
-        if (current && typeof current === "object" && key in current) {
-            current = current[key];
-        } else {
-            current = undefined;
-            break;
-        }
-    }
-
-    if (typeof current !== "string") {
-        let fallback: any = pt;
-        for (const key of keys) {
-            if (fallback && typeof fallback === "object" && key in fallback) {
-                fallback = fallback[key];
-            } else {
-                return keyPath;
-            }
-        }
-        current = typeof fallback === "string" ? fallback : keyPath;
-    }
-
+    let res = resolveKey(LOCALES[lang] || pt, keys) ?? resolveKey(pt, keys);
+    if (typeof res !== "string") return keyPath;
     if (params) {
-        let result = current as string;
-        for (const [paramKey, paramVal] of Object.entries(params)) {
-            result = result.replace(new RegExp(`\\{${paramKey}\\}`, "g"), String(paramVal));
-        }
-        return result;
+        Object.entries(params).forEach(([k, v]) => {
+            res = (res as string).replaceAll(`{${k}}`, String(v));
+        });
     }
-
-    return current;
+    return res;
 }
+

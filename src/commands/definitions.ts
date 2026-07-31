@@ -85,10 +85,15 @@ export const languageCommand = new SlashCommandBuilder()
 
 export const helpMeCommand = new SlashCommandBuilder()
   .setName('help_me')
-  .setDescription('Guia completo do BOMB e suporte discreto da Mão Amiga')
+  .setDescription('Guia de comandos da guilda e suporte discreto da Mão Amiga')
+  .addBooleanOption(opt =>
+    opt.setName('pedir_ajuda')
+       .setDescription('Deseja enviar um pedido de ajuda aos companheiros de guilda? (Sim/Não)')
+       .setRequired(false)
+  )
   .addStringOption(opt =>
     opt.setName('duvida')
-       .setDescription('Descreva em que precisa de suporte (ou deixe em branco para ver o Guia Completo)')
+       .setDescription('Descreva em que precisa de suporte (opcional caso peça ajuda)')
        .setRequired(false)
   );
 

@@ -3,47 +3,24 @@ import { Command } from "./commandInterface.js";
 import { projectService } from "../services/projectService.js";
 import { userService } from "../services/userService.js";
 import { reportUtils } from "../utils/reportUtils.js";
-import { ICONS, errorMsg } from "../utils/theme.js";
+import { errorMsg } from "../utils/theme.js";
 
 export const daily: Command = {
     name: "daily",
-
     async execute(interaction: ChatInputCommandInteraction) {
-        if (!interaction.guildId) {
-            await interaction.reply({
-                content: errorMsg("Este comando só pode ser executado dentro de um servidor do Discord."),
-                flags: MessageFlags.Ephemeral,
-            });
-            return;
-        }
+        if (!interaction.guildId) return void await interaction.reply({ content: errorMsg("Este comando só pode ser executado dentro de um servidor do Discord."), flags: MessageFlags.Ephemeral });
 
         const project = await projectService.getProjectByGuild(interaction.guildId);
-        if (!project) {
-            await interaction.reply({
-                content: errorMsg("Nenhuma guilda existe neste servidor. Crie uma primeiro usando `/create_project`."),
-                flags: MessageFlags.Ephemeral,
-            });
-            return;
+        if (!project) return void await interaction.reply({ content: errorMsg("Nenhuma guilda existe neste servidor. Crie uma primeiro usando `/create_project`."), flags: MessageFlags.Ephemeral });
+
+        if (!(await userService.getMember(interaction.user.id, project.id))) {
+            return void await interaction.reply({ content: errorMsg("Você não é um aventureiro desta guilda. Entre usando `/join_project` com o código de acesso."), flags: MessageFlags.Ephemeral });
         }
 
-        const member = await userService.getMember(interaction.user.id, project.id);
-        if (!member) {
-            await interaction.reply({
-                content: errorMsg("Você não é um aventureiro desta guilda. Entre usando `/join_project` com o código de acesso."),
-                flags: MessageFlags.Ephemeral,
-            });
-            return;
-        }
-
-        const isOpen = reportUtils.isDailyOpen(project);
-        if (!isOpen) {
-            const dailyTime = project.daily_time ? project.daily_time.substring(0, 5) : "N/A";
+        if (!reportUtils.isDailyOpen(project)) {
+            const time = project.daily_time ? project.daily_time.substring(0, 5) : "N/A";
             const period = project.daily_period ? `${project.daily_period}m` : "N/A";
-            await interaction.reply({
-                content: errorMsg(`O portal de submissão está fechado! ⏰ Ele só abre por ${period} a partir das ${dailyTime}.`),
-                flags: MessageFlags.Ephemeral,
-            });
-            return;
+            return void await interaction.reply({ content: errorMsg(`O portal de submissão está fechado! ⏰ Ele só abre por ${period} a partir das ${time}.`), flags: MessageFlags.Ephemeral });
         }
 
         await reportUtils.showDailyModal(interaction);
