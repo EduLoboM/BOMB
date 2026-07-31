@@ -19,71 +19,34 @@ export const CARD_REGISTRY: CardDefinition[] = [
     { id: "c6", name: "Deploy Sem Caos", icon: "🚀", rarity: "Shiny", description: "O milagre divino do código em produção." }
 ];
 
+const CARD_POOLS = {
+    Common: CARD_REGISTRY.filter(c => c.rarity === 'Common'),
+    Rare: CARD_REGISTRY.filter(c => c.rarity === 'Rare'),
+    Epic: CARD_REGISTRY.filter(c => c.rarity === 'Epic'),
+    Shiny: CARD_REGISTRY.filter(c => c.rarity === 'Shiny'),
+};
+
+export function drawCard(): { id: string; name: string; rarity: 'Common' | 'Rare' | 'Epic' | 'Shiny'; isShiny: boolean } {
+    const rand = Math.random() * 100;
+    const rarity: 'Common' | 'Rare' | 'Epic' | 'Shiny' = rand > 98 ? "Shiny" : rand > 90 ? "Epic" : rand > 60 ? "Rare" : "Common";
+    const pool = CARD_POOLS[rarity];
+    const cardDef = pool[Math.floor(Math.random() * pool.length)] || CARD_REGISTRY[0]!;
+    return { id: cardDef.id, name: cardDef.name, rarity: cardDef.rarity, isShiny: cardDef.rarity === "Shiny" };
+}
+
 export class CardService {
     static async drawCard(userId: string): Promise<UserCard | null> {
-        const rand = Math.random() * 100;
-        let rarity: 'Common' | 'Rare' | 'Epic' | 'Shiny' = "Common";
-        
-        if (rand > 98) rarity = "Shiny";
-        else if (rand > 90) rarity = "Epic";
-        else if (rand > 60) rarity = "Rare";
-
-        const pool = CARD_REGISTRY.filter(c => c.rarity === rarity);
-        const cardDef = pool[Math.floor(Math.random() * pool.length)] || CARD_REGISTRY[0];
-
-        const { data, error } = await supabase
-            .from("user_cards")
-            .insert([{
-                user_id: userId,
-                card_id: cardDef!.id,
-                card_name: cardDef!.name,
-                rarity: cardDef!.rarity,
-                is_shiny: cardDef!.rarity === "Shiny",
-                obtained_at: new Date().toISOString()
-            }])
-            .select()
-            .single();
-
-        if (error) {
-            Logger.error("Failed to insert user card:", error);
-            return null;
-        }
-
+        const card = drawCard();
+        const { data, error } = await supabase.from("user_cards").insert([{
+            user_id: userId, card_id: card.id, card_name: card.name, rarity: card.rarity, is_shiny: card.isShiny, obtained_at: new Date().toISOString()
+        }]).select().single();
+        if (error) return Logger.error("Failed to insert user card:", error), null;
         return data as UserCard;
     }
 
     static async getUserCards(userId: string): Promise<UserCard[]> {
-        const { data, error } = await supabase
-            .from("user_cards")
-            .select("*")
-            .eq("user_id", userId)
-            .order("obtained_at", { ascending: false });
-
-        if (error) {
-            Logger.error("Failed to fetch user cards:", error);
-            return [];
-        }
-
+        const { data, error } = await supabase.from("user_cards").select("*").eq("user_id", userId).order("obtained_at", { ascending: false });
+        if (error) return Logger.error("Failed to fetch user cards:", error), [];
         return (data || []) as UserCard[];
     }
 }
-
-export function drawCard(): { id: string; name: string; rarity: string; isShiny: boolean } {
-  const rand = Math.random() * 100;
-  let rarity: 'Common' | 'Rare' | 'Epic' | 'Shiny' = "Common";
-  
-  if (rand > 98) rarity = "Shiny";
-  else if (rand > 90) rarity = "Epic";
-  else if (rand > 60) rarity = "Rare";
-
-  const pool = CARD_REGISTRY.filter(c => c.rarity === rarity);
-  const cardDef = pool[Math.floor(Math.random() * pool.length)] || CARD_REGISTRY[0];
-
-  return {
-    id: cardDef!.id,
-    name: cardDef!.name,
-    rarity: cardDef!.rarity,
-    isShiny: cardDef!.rarity === 'Shiny'
-  };
-}
-
