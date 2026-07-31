@@ -35,73 +35,32 @@ export const CLASS_COLORS: Record<string, number> = {
 export function getClassColor(className?: string): number {
     return CLASS_COLORS[className || "Gobbo"] ?? COLORS.primary;
 }
+
 export const ICONS = {
-
-    success:    "✅",
-    error:      "❌",
-    warning:    "⚠️",
-    info:       "💡",
-    pending:    "⏳",
-    active:     "🔥",
-    bomb:       "💣",
-    user:       "⚔️",
-    team:       "🛡️",
-    key:        "🗝️",
-    channel:    "📡",
-    clock:      "⏰",
-    calendar:   "📅",
-    timer:      "⏱️",
-    timezone:   "🌍",
-    sprint:     "🏁",
-    repeat:     "🔄",
-    flag:       "🚩",
-    finish:     "🎯",
-    quest:      "📜",
-    guild:      "🏰",
-    crown:      "👑",
-    potion:     "⚗️",
-    scroll:     "📜",
-    sword:      "🗡️",
-    shield:     "🛡️",
-    magic:      "🔮",
-    treasure:   "💎",
-    map:        "🗺️",
-    arrow:      "▸",
-    arrowRight: "►",
-    diamond:    "💠",
-    dot:        "·",
-    star:       "⭐",
-    sparkle:    "✨",
-    bolt:       "⚡",
-    gear:       "⚙️",
-    link:       "🔗",
-    check:      "✅",
-    cross:      "❌",
-    blocker:    "🚧",
-    none:       "—",
-    xp:         "🌟",
-    levelup:    "🎉",
-    streak:     "🔥",
-    badge:      "🏆",
+    success:    "✅", error:      "❌", warning:    "⚠️", info:       "💡",
+    pending:    "⏳", active:     "🔥", bomb:       "💣", user:       "⚔️",
+    team:       "🛡️", key:        "🗝️", channel:    "📡", clock:      "⏰",
+    calendar:   "📅", timer:      "⏱️", timezone:   "🌍", sprint:     "🏁",
+    repeat:     "🔄", flag:       "🚩", finish:     "🎯", quest:      "📜",
+    guild:      "🏰", crown:      "👑", potion:     "⚗️", scroll:     "📜",
+    sword:      "🗡️", shield:     "🛡️", magic:      "🔮", treasure:   "💎",
+    map:        "🗺️", arrow:      "▸",  arrowRight: "►",  diamond:    "💠",
+    dot:        "·",  star:       "⭐", sparkle:    "✨", bolt:       "⚡",
+    gear:       "⚙️", link:       "🔗", check:      "✅", cross:      "❌",
+    blocker:    "🚧", none:       "—",  xp:         "🌟", levelup:    "🎉",
+    streak:     "🔥", badge:      "🏆",
 } as const;
+
 const ESC = "\u001b";
+export const ANSI = { RED: 31, GREEN: 32, YELLOW: 33, BLUE: 34, PINK: 35, CYAN: 36, WHITE: 37 } as const;
 
-export const ANSI = {
-    RED:    31,
-    GREEN:  32,
-    YELLOW: 33,
-    BLUE:   34,
-    PINK:   35,
-    CYAN:   36,
-    WHITE:  37,
-} as const;
 export function ansiColor(text: string, colorCode: number, bold: boolean = true): string {
-    const style = bold ? 1 : 0;
-    return `${ESC}[${style};${colorCode}m${text}${ESC}[0m`;
+    return `${ESC}[${bold ? 1 : 0};${colorCode}m${text}${ESC}[0m`;
 }
 export function ansiBlock(lines: string[]): string {
-    return "```ansi\n" + lines.join("\n") + "\n```";
+    return `\`\`\`ansi\n${lines.join("\n")}\n\`\`\``;
 }
+
 export const DIVIDERS = {
     thin:     "─────────────────────────────",
     thick:    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
@@ -115,79 +74,45 @@ export const DIVIDERS = {
     wave:     "∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿",
     block:    "░▒▓█▓▒░ ░▒▓█▓▒░ ░▒▓█▓▒░",
 } as const;
+
+const makeHeader = (borderCol: number, titleCol: number, title: string) => ansiBlock([
+    ansiColor("╔══════════════════════════════════╗", borderCol),
+    ansiColor(`║  ${title.padEnd(32)}║`, titleCol),
+    ansiColor("╚══════════════════════════════════╝", borderCol),
+]);
+
 export const HEADERS = {
-    bomb: ansiBlock([
-        ansiColor("╔══════════════════════════════════╗", ANSI.YELLOW),
-        ansiColor("║    B  ·  O  ·  M  ·  B          ║", ANSI.WHITE),
-        ansiColor("║    Adventure Guild System        ║", ANSI.CYAN),
-        ansiColor("╚══════════════════════════════════╝", ANSI.YELLOW),
-    ]),
-
-    daily: ansiBlock([
-        ansiColor("╔══════════════════════════════════╗", ANSI.YELLOW),
-        ansiColor("║  QUEST LOG  ·  DAILY EXPEDITION  ║", ANSI.CYAN),
-        ansiColor("╚══════════════════════════════════╝", ANSI.YELLOW),
-    ]),
-
-    sprint: ansiBlock([
-        ansiColor("╔══════════════════════════════════╗", ANSI.PINK),
-        ansiColor("║  EXPEDITION MAP  ·  SPRINT       ║", ANSI.YELLOW),
-        ansiColor("╚══════════════════════════════════╝", ANSI.PINK),
-    ]),
-
-    danger: ansiBlock([
-        ansiColor("╔══════════════════════════════════╗", ANSI.RED),
-        ansiColor("║  !! DANGER ZONE !!               ║", ANSI.RED),
-        ansiColor("╚══════════════════════════════════╝", ANSI.RED),
-    ]),
-
-    welcome: ansiBlock([
-        ansiColor("╔══════════════════════════════════╗", ANSI.GREEN),
-        ansiColor("║  WELCOME TO THE ADVENTURE!       ║", ANSI.WHITE),
-        ansiColor("╚══════════════════════════════════╝", ANSI.GREEN),
-    ]),
-
-    config: ansiBlock([
-        ansiColor("╔══════════════════════════════════╗", ANSI.CYAN),
-        ansiColor("║  MAGIC CONFIGURATION TOME        ║", ANSI.WHITE),
-        ansiColor("╚══════════════════════════════════╝", ANSI.CYAN),
-    ]),
-
-    victory: ansiBlock([
-        ansiColor("╔══════════════════════════════════╗", ANSI.GREEN),
-        ansiColor("║  EPIC VICTORY!  ·  QUEST CLEAR   ║", ANSI.YELLOW),
-        ansiColor("╚══════════════════════════════════╝", ANSI.GREEN),
-    ]),
+    bomb: makeHeader(ANSI.YELLOW, ANSI.CYAN, "B  ·  O  ·  M  ·  B"),
+    daily: makeHeader(ANSI.YELLOW, ANSI.CYAN, "QUEST LOG  ·  DAILY EXPEDITION"),
+    sprint: makeHeader(ANSI.PINK, ANSI.YELLOW, "EXPEDITION MAP  ·  SPRINT"),
+    danger: makeHeader(ANSI.RED, ANSI.RED, "!! DANGER ZONE !!"),
+    welcome: makeHeader(ANSI.GREEN, ANSI.WHITE, "WELCOME TO THE ADVENTURE!"),
+    config: makeHeader(ANSI.CYAN, ANSI.WHITE, "MAGIC CONFIGURATION TOME"),
+    victory: makeHeader(ANSI.GREEN, ANSI.YELLOW, "EPIC VICTORY!  ·  QUEST CLEAR"),
 } as const;
+
 export function progressBar(current: number, total: number, length: number = 12): string {
     if (total === 0) return `${"░".repeat(length)} 0/0`;
     const filled = Math.round((current / total) * length);
-    const empty = length - filled;
-    return `${"▓".repeat(filled)}${"░".repeat(empty)} ${current}/${total}`;
+    return `${"▓".repeat(filled)}${"░".repeat(length - filled)} ${current}/${total}`;
 }
 export function ansiProgressBar(current: number, total: number, length: number = 12): string {
     if (total === 0) return `${ansiColor("░".repeat(length), ANSI.WHITE, false)} 0/0`;
     const filled = Math.round((current / total) * length);
-    const empty = length - filled;
-    return `${ansiColor("▓".repeat(filled), ANSI.GREEN)}${ansiColor("░".repeat(empty), ANSI.WHITE, false)} ${ansiColor(`${current}/${total}`, ANSI.CYAN)}`;
+    return `${ansiColor("▓".repeat(filled), ANSI.GREEN)}${ansiColor("░".repeat(length - filled), ANSI.WHITE, false)} ${ansiColor(`${current}/${total}`, ANSI.CYAN)}`;
 }
 export function sectionTitle(icon: string, text: string): string {
     return `${icon}  **${text}**`;
 }
 export function treeList(items: string[], indent: number = 0): string {
     const pad = " ".repeat(indent);
-    return items.map((item, i) => {
-        const prefix = i === items.length - 1 ? "└─" : "├─";
-        return `${pad}${prefix} ${item}`;
-    }).join("\n");
+    return items.map((item, i) => `${pad}${i === items.length - 1 ? "└─" : "├─"} ${item}`).join("\n");
 }
 export function treeItem(text: string, isLast: boolean = false): string {
     return `${isLast ? "└─" : "├─"} ${text}`;
 }
 export function statusBadge(label: string, active: boolean): string {
-    return active
-        ? `\`[ 🔥 ${label.toUpperCase()} ]\``
-        : `\`[ ⏳ ${label.toUpperCase()} ]\``;
+    return `\`[ ${active ? "🔥" : "⏳"} ${label.toUpperCase()} ]\``;
 }
 export function kvPair(key: string, value: string): string {
     return `**${key}:** ${value}`;
@@ -200,9 +125,7 @@ export function questBox(value: string): string {
         ansiColor(`  ╚${"═".repeat(pad)}╝`, ANSI.YELLOW),
     ]);
 }
-export function framedValue(value: string): string {
-    return questBox(value);
-}
+export const framedValue = questBox;
 export function codeBox(value: string): string {
     return `\`${value}\``;
 }
@@ -216,44 +139,23 @@ export function buildEmbed(options: {
     thumbnail?: string;
     author?: { name: string; iconURL?: string };
 }): EmbedBuilder {
-    const embed = new EmbedBuilder()
-        .setColor(options.color ?? COLORS.primary)
-        .setTimestamp()
-        .setFooter({ text: "💣 BOMB · Adventure Guild" });
-
+    const embed = new EmbedBuilder().setColor(options.color ?? COLORS.primary).setTimestamp().setFooter({ text: "💣 BOMB · Adventure Guild" });
     if (options.title) embed.setTitle(options.title);
     if (options.description) embed.setDescription(options.description);
     if (options.thumbnail) embed.setThumbnail(options.thumbnail);
-    if (options.author) {
-        embed.setAuthor({
-            name: options.author.name,
-            iconURL: options.author.iconURL,
-        });
-    }
-
+    if (options.author) embed.setAuthor({ name: options.author.name, iconURL: options.author.iconURL });
     return embed;
 }
-export function errorMsg(message: string): string {
-    return `❌ ${message}`;
-}
-export function successMsg(message: string): string {
-    return `✅ ${message}`;
-}
-export function infoMsg(message: string): string {
-    return `💡 ${message}`;
-}
-export function warningMsg(message: string): string {
-    return `⚠️ ${message}`;
-}
+export const errorMsg = (m: string) => `❌ ${m}`;
+export const successMsg = (m: string) => `✅ ${m}`;
+export const infoMsg = (m: string) => `💡 ${m}`;
+export const warningMsg = (m: string) => `⚠️ ${m}`;
 export function memberLine(mention: string, displayName: string, isLast: boolean = false): string {
     return `${isLast ? "└─" : "├─"} ⚔️ ${mention} *(${displayName})*`;
 }
 export function sprintTimeline(startDate: string, endDate: string, daysLeft?: number): string {
-    const lines = [
-        `🚩 ${codeBox(startDate)} ${"═".repeat(8)}► ${codeBox(endDate)}`,
-    ];
-    if (daysLeft !== undefined) {
-        lines.push(`${"    "}⏱️ **${daysLeft}** dia(s) restante(s) na expedição`);
-    }
-    return lines.join("\n");
+    let res = `🚩 ${codeBox(startDate)} ${"═".repeat(8)}► ${codeBox(endDate)}`;
+    if (daysLeft !== undefined) res += `\n    ⏱️ **${daysLeft}** dia(s) restante(s) na expedição`;
+    return res;
 }
+

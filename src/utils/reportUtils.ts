@@ -36,235 +36,138 @@ function formatSubmissionEntry(
     continueChar: string,
     lang: Language = "pt"
 ): string {
-    const blockerText = daily.blockers && daily.blockers.trim()
-        ? `🚧 ${daily.blockers}`
-        : "—";
-
+    const blockerText = daily.blockers?.trim() ? `🚧 ${daily.blockers}` : "—";
     const userClass = daily.users.character_class || "Gobbo";
     const classIcon = CLASS_REGISTRY[userClass]?.icon || "🍀";
     const level = daily.users.level ?? 1;
     const streak = daily.users.streak ?? 0;
-    const streakBadge = streak > 0 ? `🔥 ${streak}` : "";
+    const userBadge = `[${classIcon} ${userClass} Lv ${level}${streak > 0 ? ` | 🔥 ${streak}` : ""}]`;
 
-    const userBadge = `[${classIcon} ${userClass} Lv ${level}${streakBadge ? ` | ${streakBadge}` : ""}]`;
-
-    return (
-        `${branchChar}─ ⚔️ **<@${discordId}>** *(${daily.users.display_name})* \`${userBadge}\`\n` +
-        `${continueChar}  ${treeItem(`✅ **${t("daily.done", lang)}:** ${daily.done}`)}` + "\n" +
-        `${continueChar}  ${treeItem(`📋 **${t("daily.todo", lang)}:** ${daily.todo}`)}` + "\n" +
-        `${continueChar}  ${treeItem(`🚧 **${t("daily.blockers", lang)}:** ${blockerText}`, true)}` + "\n" +
-        `${continueChar}\n`
-    );
+    return `${branchChar}─ ⚔️ **<@${discordId}>** *(${daily.users.display_name})* \`${userBadge}\`\n` +
+        `${continueChar}  ${treeItem(`✅ **${t("daily.done", lang)}:** ${daily.done}`)}\n` +
+        `${continueChar}  ${treeItem(`📋 **${t("daily.todo", lang)}:** ${daily.todo}`)}\n` +
+        `${continueChar}  ${treeItem(`🚧 **${t("daily.blockers", lang)}:** ${blockerText}`, true)}\n` +
+        `${continueChar}\n`;
 }
 
 export const reportUtils = {
     async sendOrUpdateDailyReport(client: Client, project: Project, dateStr: string): Promise<void> {
         try {
-            if (!project.channel_id) {
-                Logger.warn(`No daily report channel configured for project ${project.name}`);
-                return;
-            }
-
+            if (!project.channel_id) return Logger.warn(`No daily report channel configured for project ${project.name}`);
             const members = await userService.getProjectMembers(project.id);
-            if (members.length === 0) {
-                Logger.warn(`No members found for project ${project.name}`);
-                return;
-            }
+            if (members.length === 0) return Logger.warn(`No members found for project ${project.name}`);
 
             const { start, end } = dateUtils.getLocalDayBoundaries(dateStr);
             const dailies = await dailyService.getDailiesForProjectToday(project.id, start, end);
 
             const dailyMap = new Map<string, DailyWithUser>();
-            for (const daily of dailies) {
-                if (daily.users) {
-                    dailyMap.set(daily.users.discord_id, daily);
-                }
-            }
+            dailies.forEach(d => { if (d.users) dailyMap.set(d.users.discord_id, d); });
 
-            const submittedUserIds = new Set(dailyMap.keys());
             const lang: Language = (project.language as Language) || "pt";
-            const pendingMembers = members.filter(m => !submittedUserIds.has(m.discord_id));
-            const completionBar = progressBar(dailyMap.size, members.length);
+            const pending = members.filter(m => !dailyMap.has(m.discord_id));
 
             const embed = buildEmbed({
                 title: t("daily.journalTitle", lang, { date: dateStr }),
-                description: [
-                    HEADERS.daily,
-                    "",
-                    `🏰 **${t("common.guild", lang)}:** ${project.name}`,
-                    `${ICONS.arrow} ${t("daily.prompt", lang)}`,
-                    "",
-                    ansiBlock([ansiProgressBar(dailyMap.size, members.length)]),
-                ].join("\n"),
+                description: [HEADERS.daily, "", `🏰 **${t("common.guild", lang)}:** ${project.name}`, `${ICONS.arrow} ${t("daily.prompt", lang)}`, "", ansiBlock([ansiProgressBar(dailyMap.size, members.length)])].join("\n"),
                 color: COLORS.daily,
             });
+
             if (dailyMap.size > 0) {
-                const totalEntries = dailyMap.size;
-                const entries: string[] = [];
-                let entryIndex = 0;
-                for (const [discordId, daily] of dailyMap.entries()) {
-                    entryIndex++;
-                    const isLast = entryIndex === totalEntries;
-                    const branchChar = isLast ? "└" : "├";
-                    const continueChar = isLast ? " " : "│";
-                    entries.push(formatSubmissionEntry(discordId, daily, branchChar, continueChar, lang));
-                }
-
+                const total = dailyMap.size;
+                const entries = Array.from(dailyMap.entries()).map(([id, daily], idx) => {
+                    const isLast = idx === total - 1;
+                    return formatSubmissionEntry(id, daily, isLast ? "└" : "├", isLast ? " " : "│", lang);
+                });
                 const fullText = entries.join("");
-
                 if (fullText.length > 1000) {
-                    let chunk = "";
-                    let count = 1;
-
+                    let chunk = "", count = 1;
                     for (const entry of entries) {
                         if (chunk.length + entry.length > 1000) {
-                            embed.addFields({
-                                name: `${sectionTitle(ICONS.sparkle, `Relatórios (Parte ${count})`)}`,
-                                value: chunk
-                            });
+                            embed.addFields({ name: sectionTitle(ICONS.sparkle, `Relatórios (Parte ${count})`), value: chunk });
                             chunk = entry;
                             count++;
-                        } else {
-                            chunk += entry;
-                        }
+                        } else chunk += entry;
                     }
-                    if (chunk) {
-                        embed.addFields({
-                            name: `✨  Relatórios de Expedição (${dailyMap.size}/${members.length})`,
-                            value: chunk
-                        });
-                    }
+                    if (chunk) embed.addFields({ name: `✨  Relatórios de Expedição (${dailyMap.size}/${members.length})`, value: chunk });
                 } else {
-                    embed.addFields({
-                        name: `✨  Relatórios de Expedição (${dailyMap.size}/${members.length})`,
-                        value: fullText
-                    });
+                    embed.addFields({ name: `✨  Relatórios de Expedição (${dailyMap.size}/${members.length})`, value: fullText });
                 }
             } else {
-                embed.addFields({
-                    name: `✨  Relatórios de Expedição (0/${members.length})`,
-                    value: `*⏳ ...*`
-                });
+                embed.addFields({ name: `✨  Relatórios de Expedição (0/${members.length})`, value: "*⏳ ...*" });
             }
-            if (pendingMembers.length > 0) {
-                const pendingMentions = pendingMembers.map(m => `<@${m.discord_id}>`).join(", ");
-                embed.addFields({
-                    name: t("daily.pendingMembers", lang, { count: pendingMembers.length }),
-                    value: pendingMentions.length > 1020 ? pendingMentions.substring(0, 1020) + "..." : pendingMentions
-                });
+
+            if (pending.length > 0) {
+                const mentions = pending.map(m => `<@${m.discord_id}>`).join(", ");
+                embed.addFields({ name: t("daily.pendingMembers", lang, { count: pending.length }), value: mentions.length > 1020 ? mentions.substring(0, 1020) + "..." : mentions });
             } else {
-                embed.addFields({
-                    name: t("daily.pendingMembers", lang, { count: 0 }),
-                    value: t("daily.allSubmitted", lang)
-                });
+                embed.addFields({ name: t("daily.pendingMembers", lang, { count: 0 }), value: t("daily.allSubmitted", lang) });
             }
-            const button = new ButtonBuilder()
-                .setCustomId("submit_daily_btn")
-                .setLabel(t("daily.submitButton", lang))
-                .setEmoji("📜")
-                .setStyle(ButtonStyle.Success);
 
+            const button = new ButtonBuilder().setCustomId("submit_daily_btn").setLabel(t("daily.submitButton", lang)).setEmoji("📜").setStyle(ButtonStyle.Success);
             const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
-            const channel = client.channels.cache.get(project.channel_id)
-                ?? await client.channels.fetch(project.channel_id);
 
-            if (!channel || !channel.isTextBased()) {
-                Logger.warn(`Channel ${project.channel_id} is not sendable, not text-based, or not found.`);
-                return;
-            }
+            const channel = client.channels.cache.get(project.channel_id) ?? await client.channels.fetch(project.channel_id);
+            if (!channel?.isTextBased()) return Logger.warn(`Channel ${project.channel_id} is not sendable, not text-based, or not found.`);
 
             const sendableChannel = channel as TextChannel | NewsChannel;
             const messages = await sendableChannel.messages.fetch({ limit: 50 });
             const titleMatch = t("daily.journalTitle", lang, { date: dateStr });
-            const reportMsg: Message | undefined = messages.find((m: Message) =>
-                m.author.id === client.user?.id &&
-                m.embeds.length > 0 &&
-                m.embeds[0]!.title === titleMatch
-            );
+            const reportMsg = messages.find((m: Message) => m.author.id === client.user?.id && m.embeds.length > 0 && m.embeds[0]!.title === titleMatch);
 
-            if (reportMsg) {
-                await reportMsg.edit({ embeds: [embed], components: [row] });
-            } else {
-                await sendableChannel.send({ embeds: [embed], components: [row] });
-            }
+            if (reportMsg) await reportMsg.edit({ embeds: [embed], components: [row] });
+            else await sendableChannel.send({ embeds: [embed], components: [row] });
         } catch (err) {
             Logger.error(`Failed to update daily report for project ${project.name}:`, err);
         }
     },
 
     async showDailyModal(interaction: ButtonInteraction | ChatInputCommandInteraction, lang: Language = "pt"): Promise<void> {
+        const createInput = (id: string, labelKey: string, req: boolean) =>
+            new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+                new TextInputBuilder().setCustomId(id).setLabel(t(labelKey, lang)).setStyle(TextInputStyle.Paragraph).setRequired(req)
+            );
+
         const modal = new ModalBuilder()
             .setCustomId("daily_modal")
-            .setTitle(t("daily.modalTitle", lang));
+            .setTitle(t("daily.modalTitle", lang))
+            .addComponents(
+                createInput("done", "daily.modalDoneLabel", true),
+                createInput("todo", "daily.modalTodoLabel", true),
+                createInput("blockers", "daily.modalBlockersLabel", false)
+            );
 
-        const doneInput = new TextInputBuilder()
-            .setCustomId("done")
-            .setLabel(t("daily.modalDoneLabel", lang))
-            .setStyle(TextInputStyle.Paragraph)
-            .setRequired(true);
-
-        const todoInput = new TextInputBuilder()
-            .setCustomId("todo")
-            .setLabel(t("daily.modalTodoLabel", lang))
-            .setStyle(TextInputStyle.Paragraph)
-            .setRequired(true);
-
-        const blockersInput = new TextInputBuilder()
-            .setCustomId("blockers")
-            .setLabel(t("daily.modalBlockersLabel", lang))
-            .setStyle(TextInputStyle.Paragraph)
-            .setRequired(false);
-
-        const row1 = new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(doneInput);
-        const row2 = new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(todoInput);
-        const row3 = new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(blockersInput);
-
-        modal.addComponents(row1, row2, row3);
         await interaction.showModal(modal);
     },
 
     isDailyOpen(project: Project): boolean {
-        if (!project.daily_time || !project.weekdays || project.daily_period === null || project.daily_period === undefined) {
-            return true;
-        }
+        if (!project.daily_time || !project.weekdays || project.daily_period == null) return true;
 
         const timezone = project.timezone || "UTC";
         const now = new Date();
         const tzInfo = dateUtils.getDateTimeInTimezone(now, timezone);
 
-        const [startH, startM] = project.daily_time.split(":").map(Number);
-        const startMinutes = (startH ?? 0) * 60 + (startM ?? 0);
+        const parseMinutes = (timeStr: string) => {
+            const [h, m] = timeStr.split(":").map(Number);
+            return (h ?? 0) * 60 + (m ?? 0);
+        };
 
-        const [currentH, currentM] = tzInfo.time.split(":").map(Number);
-        const currentMinutes = (currentH ?? 0) * 60 + (currentM ?? 0);
-
+        const startMinutes = parseMinutes(project.daily_time);
+        const currentMinutes = parseMinutes(tzInfo.time);
         const endMinutes = startMinutes + project.daily_period;
-        const weekdays = project.weekdays.split(",").map((d: string) => d.trim().toLowerCase());
+        const weekdays = project.weekdays.split(",").map(d => d.trim().toLowerCase());
 
         if (endMinutes <= 1440) {
-
-            if (!weekdays.includes(tzInfo.weekday)) {
-                return false;
-            }
-            return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
-        } else {
-            if (currentMinutes < startMinutes) {
-                const yesterdayDate = new Date(now);
-                yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-                const yesterdayTzInfo = dateUtils.getDateTimeInTimezone(yesterdayDate, timezone);
-
-                if (!weekdays.includes(yesterdayTzInfo.weekday)) {
-                    return false;
-                }
-                return currentMinutes <= (endMinutes - 1440);
-            } else {
-
-                if (!weekdays.includes(tzInfo.weekday)) {
-                    return false;
-                }
-                return true;
-            }
+            return weekdays.includes(tzInfo.weekday) && currentMinutes >= startMinutes && currentMinutes <= endMinutes;
         }
+
+        if (currentMinutes < startMinutes) {
+            const yesterdayDate = new Date(now);
+            yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+            const yesterdayTzInfo = dateUtils.getDateTimeInTimezone(yesterdayDate, timezone);
+            return weekdays.includes(yesterdayTzInfo.weekday) && currentMinutes <= (endMinutes - 1440);
+        }
+
+        return weekdays.includes(tzInfo.weekday);
     },
 
     async sendBlockerNotification(
@@ -278,65 +181,32 @@ export const reportUtils = {
     ): Promise<void> {
         try {
             if (!project.channel_id) return;
-            const channel = client.channels.cache.get(project.channel_id)
-                ?? await client.channels.fetch(project.channel_id);
-
-            if (!channel || !channel.isTextBased()) return;
-            const sendableChannel = channel as TextChannel | NewsChannel;
+            const channel = client.channels.cache.get(project.channel_id) ?? await client.channels.fetch(project.channel_id);
+            if (!channel?.isTextBased()) return;
 
             const isStreakAlert = blockStreak >= 2;
-
             const title = isStreakAlert
                 ? `🚨  ALERTA DE BLOCK STREAK — GUILDA ${project.name}  🚨`
                 : `🚧  ALERTA DE OBSTÁCULO — GUILDA ${project.name}`;
 
             const description = isStreakAlert
-                ? [
-                    `⚠️ <@${discordId}> (*${displayName}*) está em **BLOCK STREAK DE ${blockStreak} DIAS SEGUIDOS!**`,
-                    "",
-                    `🚧 **Impedimento:** *"${blockerText}"*`,
-                    "",
-                    `👑 **Líderes e Desenvolvedores:** Ofereçam suporte para desobstruir o caminho do projeto!`,
-                    ` Use \`/blockers\` para ver o painel completo ou clique nos botões abaixo.`
-                ].join("\n")
-                : [
-                    `⚔️ <@${discordId}> (*${displayName}*) relatou um novo obstáculo:`,
-                    "",
-                    `🚧 **Obstáculo:** *"${blockerText}"*`,
-                    `⚡ **Streak de Obstáculo:** ${blockStreak} dia`,
-                    "",
-                    `🤝 *Desenvolvedores e companheiros de guilda: Ofereçam suporte!*`
-                ].join("\n");
+                ? `⚠️ <@${discordId}> (*${displayName}*) está em **BLOCK STREAK DE ${blockStreak} DIAS SEGUIDOS!**\n\n🚧 **Impedimento:** *"${blockerText}"*\n\n👑 **Líderes e Desenvolvedores:** Ofereçam suporte para desobstruir o caminho do projeto!\n Use \`/blockers\` para ver o painel completo ou clique nos botões abaixo.`
+                : `⚔️ <@${discordId}> (*${displayName}*) relatou um novo obstáculo:\n\n🚧 **Obstáculo:** *"${blockerText}"*\n⚡ **Streak de Obstáculo:** ${blockStreak} dia\n\n🤝 *Desenvolvedores e companheiros de guilda: Ofereçam suporte!*`;
 
-            const embed = buildEmbed({
-                title,
-                description,
-                color: isStreakAlert ? COLORS.danger : COLORS.warning,
-            });
+            const embed = buildEmbed({ title, description, color: isStreakAlert ? COLORS.danger : COLORS.warning });
+            const row = impedimentId ? new ActionRowBuilder<ButtonBuilder>().addComponents(
+                new ButtonBuilder().setCustomId(`streak_help_btn_${impedimentId}`).setLabel("Oferecer Ajuda").setEmoji("🤝").setStyle(ButtonStyle.Success),
+                new ButtonBuilder().setCustomId(`streak_resolve_btn_${impedimentId}`).setLabel("Marcar Resolvido").setEmoji("✅").setStyle(ButtonStyle.Primary)
+            ) : null;
 
-            const row = new ActionRowBuilder<ButtonBuilder>();
-            if (impedimentId) {
-                row.addComponents(
-                    new ButtonBuilder()
-                        .setCustomId(`streak_help_btn_${impedimentId}`)
-                        .setLabel("Oferecer Ajuda")
-                        .setEmoji("🤝")
-                        .setStyle(ButtonStyle.Success),
-                    new ButtonBuilder()
-                        .setCustomId(`streak_resolve_btn_${impedimentId}`)
-                        .setLabel("Marcar Resolvido")
-                        .setEmoji("✅")
-                        .setStyle(ButtonStyle.Primary)
-                );
-            }
-
-            await sendableChannel.send({
+            await (channel as TextChannel | NewsChannel).send({
                 embeds: [embed],
-                components: impedimentId ? [row] : []
+                components: row ? [row] : []
             });
         } catch (err) {
             Logger.error(`Failed to send blocker notification for user ${discordId}:`, err);
         }
     }
 };
+
 

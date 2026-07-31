@@ -1,140 +1,68 @@
 export const dateUtils = {
     getLocalDateString(date: Date = new Date()): string {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        return `${year}-${month}-${day}`;
+        const y = date.getFullYear(), m = String(date.getMonth() + 1).padStart(2, "0"), d = String(date.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
     },
 
     getLocalDayBoundaries(dateStr: string) {
-        const [year, month, day] = dateStr.split("-").map(Number) as [number, number, number];
-        const start = new Date(year, month - 1, day, 0, 0, 0, 0);
-        const end = new Date(year, month - 1, day, 23, 59, 59, 999);
+        const [y, m, d] = dateStr.split("-").map(Number) as [number, number, number];
         return {
-            start: start.toISOString(),
-            end: end.toISOString()
+            start: new Date(y, m - 1, d, 0, 0, 0, 0).toISOString(),
+            end: new Date(y, m - 1, d, 23, 59, 59, 999).toISOString()
         };
     },
 
     parseStartDate(startInput: string): Date {
-        if (startInput === "today") {
-            return new Date();
-        }
-
+        if (startInput === "today") return new Date();
         const parts = startInput.split("-");
-        if (parts.length === 3) {
-            const year = parseInt(parts[0]!, 10);
-            const month = parseInt(parts[1]!, 10) - 1;
-            const day = parseInt(parts[2]!, 10);
-            return new Date(year, month, day);
-        }
-
-        return new Date(startInput);
+        return parts.length === 3 ? new Date(+parts[0]!, +parts[1]! - 1, +parts[2]!) : new Date(startInput);
     },
 
     getDateTimeInTimezone(date: Date, timezone: string) {
-
-        const timeOptions = { timeZone: timezone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" } as const;
-        const timeFormatter = new Intl.DateTimeFormat("en-US", timeOptions);
-        const timeStr = timeFormatter.format(date);
-        const dayOptions = { timeZone: timezone, weekday: "short" } as const;
-        const dayFormatter = new Intl.DateTimeFormat("en-US", dayOptions);
-        const dayStr = dayFormatter.format(date).toLowerCase();
-        const dateOptions = { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit" } as const;
-        const dateFormatter = new Intl.DateTimeFormat("en-US", dateOptions);
-        const parts = dateFormatter.formatToParts(date);
-        const year = parts.find(p => p.type === "year")?.value;
-        const month = parts.find(p => p.type === "month")?.value;
-        const day = parts.find(p => p.type === "day")?.value;
-        const dateStr = `${year}-${month}-${day}`;
-
-        return {
-            time: timeStr,
-            weekday: dayStr,
-            dateString: dateStr
-        };
+        const time = new Intl.DateTimeFormat("en-US", { timeZone: timezone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(date);
+        const weekday = new Intl.DateTimeFormat("en-US", { timeZone: timezone, weekday: "short" }).format(date).toLowerCase();
+        const parts = new Intl.DateTimeFormat("en-US", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+        const getPart = (t: string) => parts.find(p => p.type === t)?.value;
+        return { time, weekday, dateString: `${getPart("year")}-${getPart("month")}-${getPart("day")}` };
     },
 
     parsePeriodToMinutes(periodInput: string): number | null {
         const input = periodInput.trim().toLowerCase().replace(/\s+/g, "");
-        const minutesMatch = input.match(/^(\d+)m$/);
-        const hoursMatch = input.match(/^(\d+)h$/);
-        const hoursMinutesMatch = input.match(/^(\d+)h(\d+)m$/);
-        const numberOnlyMatch = input.match(/^(\d+)$/);
-
-        if (minutesMatch) {
-            return parseInt(minutesMatch[1]!, 10);
-        } else if (hoursMatch) {
-            return parseInt(hoursMatch[1]!, 10) * 60;
-        } else if (hoursMinutesMatch) {
-            return parseInt(hoursMinutesMatch[1]!, 10) * 60 + parseInt(hoursMinutesMatch[2]!, 10);
-        } else if (numberOnlyMatch) {
-            return parseInt(numberOnlyMatch[1]!, 10);
-        }
-        return null;
+        const m = input.match(/^(\d+)m$/) || input.match(/^(\d+)$/);
+        if (m) return parseInt(m[1]!, 10);
+        const h = input.match(/^(\d+)h$/);
+        if (h) return parseInt(h[1]!, 10) * 60;
+        const hm = input.match(/^(\d+)h(\d+)m$/);
+        return hm ? parseInt(hm[1]!, 10) * 60 + parseInt(hm[2]!, 10) : null;
     },
 
     addDaysToDateString(dateStr: string, days: number): string {
-        const [year, month, day] = dateStr.split("-").map(Number) as [number, number, number];
-
-        const date = new Date(Date.UTC(year, month - 1, day));
+        const [y, m, d] = dateStr.split("-").map(Number) as [number, number, number];
+        const date = new Date(Date.UTC(y, m - 1, d));
         date.setUTCDate(date.getUTCDate() + days);
-
-        const y = date.getUTCFullYear();
-        const m = String(date.getUTCMonth() + 1).padStart(2, "0");
-        const d = String(date.getUTCDate()).padStart(2, "0");
-        return `${y}-${m}-${d}`;
+        return date.toISOString().split("T")[0]!;
     },
 
     normalizeTimezone(input: string): string {
         if (!input) return "UTC";
         const str = input.trim();
-
-        const match1 = str.match(/^([+-]?)(\d{1,2})$/);
-        if (match1) {
-            const sign = match1[1] === "-" ? "-" : "+";
-            const hours = match1[2]!.padStart(2, "0");
-            return `${sign}${hours}:00`;
-        }
-
-        const match2 = str.match(/^([+-]?)(\d{1,2}):(\d{2})$/);
-        if (match2) {
-            const sign = match2[1] === "-" ? "-" : "+";
-            const hours = match2[2]!.padStart(2, "0");
-            const minutes = match2[3]!;
-            return `${sign}${hours}:${minutes}`;
-        }
-        return str;
+        const m1 = str.match(/^([+-]?)(\d{1,2})$/);
+        if (m1) return `${m1[1] === "-" ? "-" : "+"}${m1[2]!.padStart(2, "0")}:00`;
+        const m2 = str.match(/^([+-]?)(\d{1,2}):(\d{2})$/);
+        return m2 ? `${m2[1] === "-" ? "-" : "+"}${m2[2]!.padStart(2, "0")}:${m2[3]}` : str;
     },
 
     isWeekdayMatching(weekdaysInput: string | null | undefined, date: Date = new Date(), timezone: string = "UTC"): boolean {
         if (!weekdaysInput) return true;
-
-        const tzInfo = this.getDateTimeInTimezone(date, timezone);
-        const dayStr = tzInfo.weekday; // e.g. "mon", "tue", "wed", "thu", "fri", "sat", "sun"
-
-        // Map short English day to numeric index (1 = Mon, ..., 7 = Sun)
-        const dayToNum: Record<string, number> = {
-            mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6, sun: 7
-        };
-        const dayToPt: Record<string, string> = {
-            mon: "seg", tue: "ter", wed: "qua", thu: "qui", fri: "sex", sat: "sab", sun: "dom"
-        };
-
-        const currentNum = dayToNum[dayStr] ?? 1;
-        const currentPt = dayToPt[dayStr] ?? "seg";
-
-        const tokens = weekdaysInput.split(",").map(s => s.trim().toLowerCase());
-
-        for (const token of tokens) {
+        const dayStr = this.getDateTimeInTimezone(date, timezone).weekday;
+        const dayToNum: Record<string, number> = { mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6, sun: 7 };
+        const dayToPt: Record<string, string> = { mon: "seg", tue: "ter", wed: "qua", thu: "qui", fri: "sex", sat: "sab", sun: "dom" };
+        const currentNum = dayToNum[dayStr] ?? 1, currentPt = dayToPt[dayStr] ?? "seg";
+        return weekdaysInput.split(",").map(s => s.trim().toLowerCase()).some(token => {
             if (token === dayStr || token === currentPt) return true;
             const parsedNum = parseInt(token, 10);
-            if (!isNaN(parsedNum)) {
-                if (parsedNum === currentNum) return true;
-                if (parsedNum === 0 && currentNum === 7) return true; // 0 or 7 for Sunday
-            }
-        }
-
-        return false;
+            return !isNaN(parsedNum) && (parsedNum === currentNum || (parsedNum === 0 && currentNum === 7));
+        });
     }
 };
+

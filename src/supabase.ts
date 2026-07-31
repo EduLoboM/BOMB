@@ -1,12 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import "dotenv/config";
 
-const supabaseUrl = process.env.SUPABASE_URL || "https://placeholder.supabase.co";
-const supabaseKey = process.env.SUPABASE_KEY || "placeholder-key";
+export const supabase = createClient(
+    process.env.SUPABASE_URL || "https://placeholder.supabase.co",
+    process.env.SUPABASE_KEY || "placeholder-key",
+    { auth: { persistSession: false } }
+);
 
-export const supabase = createClient(supabaseUrl, supabaseKey, {
-    auth: {
-        persistSession: false,
-    },
-});
 

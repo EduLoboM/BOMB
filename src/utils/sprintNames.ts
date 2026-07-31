@@ -49,7 +49,6 @@ export const SPRINT_BOSS_PRESETS: Record<Language, SprintBossPair[]> = {
 };
 
 export function getRandomSprintAndBoss(lang: Language = "pt"): SprintBossPair {
-    const presets = SPRINT_BOSS_PRESETS[lang] || SPRINT_BOSS_PRESETS.pt;
-    const randomIndex = Math.floor(Math.random() * presets.length);
-    return presets[randomIndex]!;
+    const list = SPRINT_BOSS_PRESETS[lang] || SPRINT_BOSS_PRESETS.pt;
+    return list[Math.floor(Math.random() * list.length)]!;
 }
