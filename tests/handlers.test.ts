@@ -43,7 +43,8 @@ function createMockInteraction(
       getSubcommand: () => subcommand,
       getMessage: () => ({ content: "Help needed here" }),
       getUser: () => ({ username: "otheruser" }),
-      getString: vi.fn().mockReturnValue(null)
+      getString: vi.fn().mockReturnValue(null),
+      getBoolean: vi.fn().mockReturnValue(null)
     },
     customId,
     showModal: vi.fn().mockResolvedValue(undefined),
@@ -97,6 +98,13 @@ describe("handleInteraction - New UX Architecture", () => {
   it("should handle /help_me command with duvida argument by opening help modal", async () => {
     const interaction = createMockInteraction("chat", "help_me");
     interaction.options.getString = vi.fn().mockReturnValue("Dúvida de teste");
+    await handleInteraction(interaction);
+    expect(interaction.showModal).toHaveBeenCalled();
+  });
+
+  it("should handle /help_me command with pedir_ajuda=true by opening help modal", async () => {
+    const interaction = createMockInteraction("chat", "help_me");
+    interaction.options.getBoolean = vi.fn().mockImplementation((name) => name === "pedir_ajuda");
     await handleInteraction(interaction);
     expect(interaction.showModal).toHaveBeenCalled();
   });

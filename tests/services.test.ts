@@ -1,4 +1,4 @@
-import { vi, describe, it, expect } from "vitest";
+import { vi, describe, it, expect, beforeEach } from "vitest";
 import { supabase } from "../src/supabase.js";
 
 vi.mock("../src/supabase.js", () => {
@@ -9,9 +9,9 @@ vi.mock("../src/supabase.js", () => {
     };
 });
 
-import { projectService } from "../src/services/projectService.js";
-import { userService } from "../src/services/userService.js";
-import { sprintService } from "../src/services/sprintService.js";
+import { projectService, clearProjectCache } from "../src/services/projectService.js";
+import { userService, invalidateUserCache } from "../src/services/userService.js";
+import { sprintService, clearSprintCache } from "../src/services/sprintService.js";
 import { dailyService } from "../src/services/dailyService.js";
 
 class MockSupabaseQuery {
@@ -44,6 +44,12 @@ class MockSupabaseQuery {
 
 describe("Database Services Testing", () => {
     const mockFrom = vi.mocked(supabase.from);
+
+    beforeEach(() => {
+        clearProjectCache();
+        invalidateUserCache();
+        clearSprintCache();
+    });
 
     describe("projectService", () => {
         it("getProjectByGuild - Happy Path", async () => {
